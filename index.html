@@ -311,6 +311,39 @@ function computeAreas(m){
   return { areaOf, visualArea, areas, count:id, region };
 }
 
+/* Trova la cella "più interna" di un'area (un pole of inaccessibility discreto):
+   per ogni cella dell'area calcola il raggio massimo del quadrato centrato su
+   di essa interamente contenuto nell'area, e sceglie la cella col raggio
+   maggiore. Così l'etichetta finisce sempre nella parte più larga della
+   stanza, indipendentemente dalla sua forma (L, a corridoio, ecc.), a
+   differenza del semplice centroide che può cadere fuori dall'area o in un
+   punto di passaggio stretto. */
+function areaLabelAnchor(cells){
+  const set = new Set(cells.map(c => c.row+","+c.col));
+  let best = cells[0], bestR = -1;
+  let sumR = 0, sumC = 0;
+  for(const c of cells){ sumR += c.row; sumC += c.col; }
+  const cRow = sumR/cells.length, cCol = sumC/cells.length;
+  let bestDistToCentroid = Infinity;
+  for(const cell of cells){
+    let r = 0;
+    while(true){
+      let ok = true;
+      for(let dr=-r; dr<=r && ok; dr++) for(let dc=-r; dc<=r && ok; dc++){
+        if(!set.has((cell.row+dr)+","+(cell.col+dc))) ok = false;
+      }
+      if(!ok) break;
+      r++;
+    }
+    const radius = r - 1;
+    const distToCentroid = Math.hypot(cell.row-cRow, cell.col-cCol);
+    if(radius > bestR || (radius === bestR && distToCentroid < bestDistToCentroid)){
+      best = cell; bestR = radius; bestDistToCentroid = distToCentroid;
+    }
+  }
+  return best;
+}
+
 function deserializeMap(data){
   const m = emptyMap(data.size);
   for(const c of data.cells){
@@ -731,6 +764,16 @@ function drawGrid(){
       s += `<rect x="${x}" y="${y}" width="${CS}" height="${CS}" fill="rgba(0,0,0,0.08)" pointer-events="none"/>`;
     }
   }
+  // nomi stanza: filigrana sotto muri e oggetti, posizionata sempre nella
+  // parte più larga dell'area anche se la sua forma è irregolare
+  for(const area of analysis.areas){
+    if(area.cells.length < 2) continue;
+    const anchor = areaLabelAnchor(area.cells);
+    const cx = P + (anchor.col+0.5)*CS, cy = P + (anchor.row+0.5)*CS;
+    const nm = (m.areaNames && m.areaNames[area.id]) || ("Area "+(+area.id+1));
+    s += `<text x="${cx}" y="${cy}" font-size="15" fill="#000" text-anchor="middle" opacity="0.16" pointer-events="none" font-family="var(--mono)" style="text-transform:uppercase; letter-spacing:1.5px; font-weight:800">${escapeXml(nm)}</text>`;
+  }
+
   s += `<g stroke="#2a2130" stroke-width="4" stroke-linecap="round" pointer-events="none">`;
   for(let r=0;r<N;r++) for(let c=0;c<N;c++){
     const x=P+c*CS, y=P+r*CS;
