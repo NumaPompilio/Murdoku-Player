@@ -761,28 +761,6 @@ function drawGrid(){
     const x=P+c*CS, y=P+r*CS;
     s += objectMarkup(cell.object, x+CS/2, y+CS/2, CS);
   }
-  // pass 3: etichette oggetti (sempre leggibili, sopra eventuali sconfinamenti)
-  for(let r=0;r<N;r++) for(let c=0;c<N;c++){
-    const cell = cellAt(m,r,c);
-    if(!cell.object) continue;
-    const x=P+c*CS, y=P+r*CS;
-    const label = objLabel(cell.object);
-    const textLenAttr = label.length > 8 ? ` textLength="${CS-4}" lengthAdjust="spacingAndGlyphs"` : "";
-    s += `<rect x="${x+1}" y="${y+CS-13}" width="${CS-2}" height="12" fill="rgba(244,239,228,0.82)" pointer-events="none"/>`;
-    s += `<text x="${x+CS/2}" y="${y+CS-3}" font-size="8" fill="#000" font-weight="bold" font-family="var(--sans)" text-anchor="middle" pointer-events="none"${textLenAttr}>${escapeXml(label)}</text>`;
-  }
-
-  const centroid = {};
-  for(let r=0;r<N;r++) for(let c=0;c<N;c++){
-    const a = analysis.areaOf[r*N+c]; if(a<0) continue;
-    (centroid[a]=centroid[a]||{sx:0,sy:0,n:0}); centroid[a].sx+=c; centroid[a].sy+=r; centroid[a].n++;
-  }
-  for(const a in centroid){
-    const g = centroid[a]; const cx=P+(g.sx/g.n+0.5)*CS, cy=P+(g.sy/g.n+0.5)*CS;
-    const nm = (m.areaNames && m.areaNames[a]) || ("Area "+(+a+1));
-    s += `<text x="${cx}" y="${cy}" font-size="16" fill="#6a5f4a" text-anchor="middle" opacity="0.55" pointer-events="none" font-family="var(--mono)" style="text-transform:uppercase; letter-spacing:1px; font-weight:700">${escapeXml(nm)}</text>`;
-  }
-
   s += `<g stroke="#2a2130" stroke-width="4" stroke-linecap="round" pointer-events="none">`;
   for(let r=0;r<N;r++) for(let c=0;c<N;c++){
     const x=P+c*CS, y=P+r*CS;
