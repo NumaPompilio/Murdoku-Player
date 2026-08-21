@@ -29,7 +29,20 @@ Ogni oggetto usato in una mappa deve avere una voce in `manifest.json`:
 Quando crei una nuova mappa nell'Editor con un oggetto non ancora presente qui,
 aggiungi la sua voce a `manifest.json` e il relativo file `<id>.png`.
 
-## Oggetti attualmente censiti
+## ⚠️ Da verificare: `walkable` degli oggetti aggiunti in blocco
+
+Il 21/08/2026 sono state caricate 111 immagini (l'intero catalogo oggetti). Gli
+8 oggetti usati dalla mappa di esempio (`albero_ulivo`, `tavolo`, `letto`,
+`vaso_di_piante`, `sedia`, `tappeto`, `lavandino`, `muro_a_secco`) hanno un
+flag `walkable` confermato. Per gli altri ~103 il flag è stato impostato con
+una regola automatica (calpestabile solo per sedute/superfici basse: divano,
+poltrona, pouf, sgabello, panchina, lettino, materassino, telo da mare,
+buccia di banana, luminarie; ostacolo per tutto il resto) — **non è garantito
+che coincida con quanto assume l'Editor**. Se una mappa dell'Editor risulta
+irrisolvibile nel Player (una cella "corretta" appare bloccata), controlla per
+primo il flag `walkable` dell'oggetto in quella cella.
+
+## Oggetti attualmente censiti (estratto; elenco completo in `manifest.json`)
 
 | id | etichetta | tipo |
 |---|---|---|

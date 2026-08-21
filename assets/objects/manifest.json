@@ -1,10 +1,557 @@
 [
-  { "id": "albero_ulivo",   "label": "Albero ulivo",    "walkable": false },
-  { "id": "tavolo",         "label": "Tavolo",          "walkable": false },
-  { "id": "letto",          "label": "Letto",           "walkable": true  },
-  { "id": "vaso_di_piante", "label": "Vaso di piante",  "walkable": false },
-  { "id": "sedia",          "label": "Sedia",           "walkable": true  },
-  { "id": "tappeto",        "label": "Tappeto",         "walkable": true  },
-  { "id": "lavandino",      "label": "Lavandino",       "walkable": false },
-  { "id": "muro_a_secco",   "label": "Muro a secco",    "walkable": false }
+  {
+    "id": "acquascooter",
+    "label": "Acquascooter",
+    "walkable": false
+  },
+  {
+    "id": "aiuola",
+    "label": "Aiuola",
+    "walkable": false
+  },
+  {
+    "id": "albero",
+    "label": "Albero",
+    "walkable": false
+  },
+  {
+    "id": "albero_ulivo",
+    "label": "Albero ulivo",
+    "walkable": false
+  },
+  {
+    "id": "ape_car",
+    "label": "Ape car",
+    "walkable": false
+  },
+  {
+    "id": "armadio",
+    "label": "Armadio",
+    "walkable": false
+  },
+  {
+    "id": "asino",
+    "label": "Asino",
+    "walkable": false
+  },
+  {
+    "id": "atm",
+    "label": "ATM",
+    "walkable": false
+  },
+  {
+    "id": "auto",
+    "label": "Auto",
+    "walkable": false
+  },
+  {
+    "id": "bancarella",
+    "label": "Bancarella",
+    "walkable": false
+  },
+  {
+    "id": "barca_a_vela",
+    "label": "Barca a vela",
+    "walkable": false
+  },
+  {
+    "id": "bicicletta",
+    "label": "Bicicletta",
+    "walkable": false
+  },
+  {
+    "id": "boa",
+    "label": "Boa",
+    "walkable": false
+  },
+  {
+    "id": "buca",
+    "label": "Buca",
+    "walkable": false
+  },
+  {
+    "id": "buccia_di_banana",
+    "label": "Buccia di banana",
+    "walkable": true
+  },
+  {
+    "id": "cabina",
+    "label": "Cabina",
+    "walkable": false
+  },
+  {
+    "id": "caffe_in_ghiaccio",
+    "label": "Caffè in ghiaccio",
+    "walkable": false
+  },
+  {
+    "id": "camion",
+    "label": "Camion",
+    "walkable": false
+  },
+  {
+    "id": "cane",
+    "label": "Cane",
+    "walkable": false
+  },
+  {
+    "id": "cassetta_di_legno",
+    "label": "Cassetta di legno",
+    "walkable": false
+  },
+  {
+    "id": "cassettiera",
+    "label": "Cassettiera",
+    "walkable": false
+  },
+  {
+    "id": "cassonetto",
+    "label": "Cassonetto",
+    "walkable": false
+  },
+  {
+    "id": "castello_di_sabbia",
+    "label": "Castello di sabbia",
+    "walkable": false
+  },
+  {
+    "id": "cavallo",
+    "label": "Cavallo",
+    "walkable": false
+  },
+  {
+    "id": "cernitrice",
+    "label": "Cernitrice",
+    "walkable": false
+  },
+  {
+    "id": "cespuglio",
+    "label": "Cespuglio",
+    "walkable": false
+  },
+  {
+    "id": "cestino",
+    "label": "Cestino",
+    "walkable": false
+  },
+  {
+    "id": "chiringuito",
+    "label": "Chiringuito",
+    "walkable": false
+  },
+  {
+    "id": "comodino",
+    "label": "Comodino",
+    "walkable": false
+  },
+  {
+    "id": "coniglio",
+    "label": "Coniglio",
+    "walkable": false
+  },
+  {
+    "id": "cozza",
+    "label": "Cozza",
+    "walkable": false
+  },
+  {
+    "id": "criceto",
+    "label": "Criceto",
+    "walkable": false
+  },
+  {
+    "id": "cupeta",
+    "label": "Cupeta",
+    "walkable": false
+  },
+  {
+    "id": "divano",
+    "label": "Divano",
+    "walkable": true
+  },
+  {
+    "id": "doccia",
+    "label": "Doccia",
+    "walkable": false
+  },
+  {
+    "id": "faro",
+    "label": "Faro",
+    "walkable": false
+  },
+  {
+    "id": "fico",
+    "label": "Fico",
+    "walkable": false
+  },
+  {
+    "id": "fico_d_india",
+    "label": "Fico d’India",
+    "walkable": false
+  },
+  {
+    "id": "fiori",
+    "label": "Fiori",
+    "walkable": false
+  },
+  {
+    "id": "fontana",
+    "label": "Fontana",
+    "walkable": false
+  },
+  {
+    "id": "fornello",
+    "label": "Fornello",
+    "walkable": false
+  },
+  {
+    "id": "forno",
+    "label": "Forno",
+    "walkable": false
+  },
+  {
+    "id": "frigorifero",
+    "label": "Frigorifero",
+    "walkable": false
+  },
+  {
+    "id": "frisella",
+    "label": "Frisella",
+    "walkable": false
+  },
+  {
+    "id": "fuoco",
+    "label": "Fuoco",
+    "walkable": false
+  },
+  {
+    "id": "gatto",
+    "label": "Gatto",
+    "walkable": false
+  },
+  {
+    "id": "geco",
+    "label": "Geco",
+    "walkable": false
+  },
+  {
+    "id": "giostra",
+    "label": "Giostra",
+    "walkable": false
+  },
+  {
+    "id": "gommone",
+    "label": "Gommone",
+    "walkable": false
+  },
+  {
+    "id": "lampada",
+    "label": "Lampada",
+    "walkable": false
+  },
+  {
+    "id": "lampione",
+    "label": "Lampione",
+    "walkable": false
+  },
+  {
+    "id": "lavandino",
+    "label": "Lavandino",
+    "walkable": false
+  },
+  {
+    "id": "lavatrice",
+    "label": "Lavatrice",
+    "walkable": false
+  },
+  {
+    "id": "lettino",
+    "label": "Lettino",
+    "walkable": true
+  },
+  {
+    "id": "letto",
+    "label": "Letto",
+    "walkable": true
+  },
+  {
+    "id": "libreria",
+    "label": "Libreria",
+    "walkable": false
+  },
+  {
+    "id": "luminarie",
+    "label": "Luminarie",
+    "walkable": true
+  },
+  {
+    "id": "materassino",
+    "label": "Materassino",
+    "walkable": true
+  },
+  {
+    "id": "microonde",
+    "label": "Microonde",
+    "walkable": false
+  },
+  {
+    "id": "moto",
+    "label": "Moto",
+    "walkable": false
+  },
+  {
+    "id": "motozappa",
+    "label": "Motozappa",
+    "walkable": false
+  },
+  {
+    "id": "mucca",
+    "label": "Mucca",
+    "walkable": false
+  },
+  {
+    "id": "muro_a_secco",
+    "label": "Muro a secco",
+    "walkable": false
+  },
+  {
+    "id": "ombrellone",
+    "label": "Ombrellone",
+    "walkable": false
+  },
+  {
+    "id": "pajaro",
+    "label": "Pajaro",
+    "walkable": false
+  },
+  {
+    "id": "palma",
+    "label": "Palma",
+    "walkable": false
+  },
+  {
+    "id": "panchina",
+    "label": "Panchina",
+    "walkable": true
+  },
+  {
+    "id": "pasticciotto",
+    "label": "Pasticciotto",
+    "walkable": false
+  },
+  {
+    "id": "pc",
+    "label": "PC",
+    "walkable": false
+  },
+  {
+    "id": "pedalo",
+    "label": "Pedalò",
+    "walkable": false
+  },
+  {
+    "id": "pesce",
+    "label": "Pesce",
+    "walkable": false
+  },
+  {
+    "id": "pezzo_di_legno",
+    "label": "Pezzo di legno",
+    "walkable": false
+  },
+  {
+    "id": "pino",
+    "label": "Pino",
+    "walkable": false
+  },
+  {
+    "id": "polipo",
+    "label": "Polipo",
+    "walkable": false
+  },
+  {
+    "id": "poltrona",
+    "label": "Poltrona",
+    "walkable": true
+  },
+  {
+    "id": "pouf",
+    "label": "Pouf",
+    "walkable": true
+  },
+  {
+    "id": "puccio",
+    "label": "Puccio",
+    "walkable": false
+  },
+  {
+    "id": "pumo",
+    "label": "Pumo",
+    "walkable": false
+  },
+  {
+    "id": "registratore_di_cassa",
+    "label": "Registratore di cassa",
+    "walkable": false
+  },
+  {
+    "id": "riccio_di_mare",
+    "label": "Riccio di mare",
+    "walkable": false
+  },
+  {
+    "id": "rovi",
+    "label": "Rovi",
+    "walkable": false
+  },
+  {
+    "id": "rustico",
+    "label": "Rustico",
+    "walkable": false
+  },
+  {
+    "id": "salvagente",
+    "label": "Salvagente",
+    "walkable": false
+  },
+  {
+    "id": "sant_oronzo",
+    "label": "Sant’Oronzo",
+    "walkable": false
+  },
+  {
+    "id": "scaffale",
+    "label": "Scaffale",
+    "walkable": false
+  },
+  {
+    "id": "scarafaggio",
+    "label": "Scarafaggio",
+    "walkable": false
+  },
+  {
+    "id": "scoglio",
+    "label": "Scoglio",
+    "walkable": false
+  },
+  {
+    "id": "sdraio",
+    "label": "Sdraio",
+    "walkable": false
+  },
+  {
+    "id": "secchiello",
+    "label": "Secchiello",
+    "walkable": false
+  },
+  {
+    "id": "sedia",
+    "label": "Sedia",
+    "walkable": true
+  },
+  {
+    "id": "segnale_stradale",
+    "label": "Segnale stradale",
+    "walkable": false
+  },
+  {
+    "id": "semaforo",
+    "label": "Semaforo",
+    "walkable": false
+  },
+  {
+    "id": "serpente",
+    "label": "Serpente",
+    "walkable": false
+  },
+  {
+    "id": "sgabello",
+    "label": "Sgabello",
+    "walkable": true
+  },
+  {
+    "id": "statua",
+    "label": "Statua",
+    "walkable": false
+  },
+  {
+    "id": "statua_della_madonna",
+    "label": "Statua della Madonna",
+    "walkable": false
+  },
+  {
+    "id": "sup",
+    "label": "SUP",
+    "walkable": false
+  },
+  {
+    "id": "tagata",
+    "label": "Tagatà",
+    "walkable": false
+  },
+  {
+    "id": "tamburello",
+    "label": "Tamburello",
+    "walkable": false
+  },
+  {
+    "id": "tappeto",
+    "label": "Tappeto",
+    "walkable": true
+  },
+  {
+    "id": "tavola_da_surf",
+    "label": "Tavola da surf",
+    "walkable": false
+  },
+  {
+    "id": "tavolo",
+    "label": "Tavolo",
+    "walkable": false
+  },
+  {
+    "id": "telo_da_mare",
+    "label": "Telo da mare",
+    "walkable": true
+  },
+  {
+    "id": "toro",
+    "label": "Toro",
+    "walkable": false
+  },
+  {
+    "id": "torretta_bagnino",
+    "label": "Torretta bagnino",
+    "walkable": false
+  },
+  {
+    "id": "trattore",
+    "label": "Trattore",
+    "walkable": false
+  },
+  {
+    "id": "triciclo",
+    "label": "Triciclo",
+    "walkable": false
+  },
+  {
+    "id": "tv",
+    "label": "TV",
+    "walkable": false
+  },
+  {
+    "id": "vaso_di_piante",
+    "label": "Vaso di piante",
+    "walkable": false
+  },
+  {
+    "id": "water",
+    "label": "Water",
+    "walkable": false
+  },
+  {
+    "id": "zappa",
+    "label": "Zappa",
+    "walkable": false
+  }
 ]
