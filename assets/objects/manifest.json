@@ -1,0 +1,10 @@
+[
+  { "id": "albero_ulivo",   "label": "Albero ulivo",    "walkable": false },
+  { "id": "tavolo",         "label": "Tavolo",          "walkable": false },
+  { "id": "letto",          "label": "Letto",           "walkable": true  },
+  { "id": "vaso_di_piante", "label": "Vaso di piante",  "walkable": false },
+  { "id": "sedia",          "label": "Sedia",           "walkable": true  },
+  { "id": "tappeto",        "label": "Tappeto",         "walkable": true  },
+  { "id": "lavandino",      "label": "Lavandino",       "walkable": false },
+  { "id": "muro_a_secco",   "label": "Muro a secco",    "walkable": false }
+]

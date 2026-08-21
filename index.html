@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Murdoku Player</title>
+<style>
+  :root{
+    --ink:#141019; --desk:#1b1622; --panel:#221b2e; --panel2:#2b2238;
+    --line:#3a2f4d; --line2:#4a3d61;
+    --violet:#8a6bff; --violet-bright:#a98bff; --violet-dim:#5b48a8;
+    --evidence:#e4483d; --gold:#d8b25a; --paper:#f4efe4; --paper-line:#d9cfbb;
+    --text:#eee9f5; --text-dim:#b6acc7; --text-faint:#8a809c;
+    --ok:#28a745;
+    --serif: "Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+    --sans: system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono: ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:var(--sans); color:var(--text); background:
+      radial-gradient(1200px 700px at 80% -10%, #2a2036 0%, transparent 60%),
+      radial-gradient(900px 600px at -10% 110%, #241b31 0%, transparent 55%),
+      var(--ink);
+    display:flex; flex-direction:column; min-height:100vh;
+  }
+  a{color:var(--violet-bright)}
+  button{font-family:inherit}
+
+  header{
+    display:flex; align-items:center; gap:14px; padding:12px 18px;
+    border-bottom:1px solid var(--line); background:linear-gradient(180deg,#241c31,#1c1626);
+    position:sticky; top:0; z-index:20; flex-wrap:wrap;
+  }
+  .brand{display:flex; align-items:baseline; gap:10px}
+  .brand .tab{
+    font-family:var(--serif); font-size:20px; letter-spacing:.5px; color:var(--paper);
+    background:var(--evidence); padding:4px 12px 5px; border-radius:3px 3px 0 0;
+    box-shadow:0 3px 0 #a5271f; transform:rotate(-1deg);
+  }
+  .brand h1{font-family:var(--serif); font-weight:600; font-size:17px; margin:0; letter-spacing:.3px}
+  .spacer{flex:1}
+  .btn{
+    background:var(--panel2); color:var(--text); border:1px solid var(--line2);
+    padding:9px 13px; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600;
+    display:inline-flex; align-items:center; gap:7px; transition:.12s; white-space:nowrap;
+  }
+  .btn:hover{border-color:var(--violet); background:#332947}
+  .btn.primary{background:linear-gradient(180deg,var(--violet),var(--violet-dim)); border-color:var(--violet); color:#fff}
+  .btn.primary:hover{filter:brightness(1.08)}
+  .btn.ghost{background:transparent}
+  .btn:disabled{opacity:.45; cursor:not-allowed}
+
+  main{flex:1; display:flex; flex-direction:column; min-height:0}
+
+  /* ---------- Modali ---------- */
+  .modal{position:fixed; inset:0; background:rgba(10,8,14,.78); display:none; align-items:center; justify-content:center; z-index:60; padding:20px}
+  .modal.active{display:flex}
+  .modal .box{background:var(--panel); border:1px solid var(--line2); border-radius:14px; width:min(560px,96vw); max-height:88vh; overflow-y:auto; box-shadow:0 30px 80px rgba(0,0,0,.5)}
+  .modal .mh{display:flex; align-items:center; gap:10px; padding:14px 18px; border-bottom:1px solid var(--line)}
+  .modal .mh h3{margin:0; font-family:var(--serif); font-size:18px}
+  .modal .mb{padding:18px}
+  .modal .mf{padding:14px 18px; border-top:1px solid var(--line); display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap}
+  .tabs{display:flex; gap:8px; margin-bottom:14px}
+  .tabs button{flex:1}
+  .tabs button.active{background:linear-gradient(180deg,var(--violet),var(--violet-dim)); border-color:var(--violet); color:#fff}
+  select, textarea{
+    width:100%; background:var(--ink); color:var(--text); border:1px solid var(--line2);
+    border-radius:7px; padding:10px; font-family:var(--sans); font-size:14px;
+  }
+  textarea{font-family:var(--mono); font-size:12px; height:120px; resize:vertical}
+  .hint{font-size:12px; color:var(--text-faint); margin-top:8px; line-height:1.5}
+  .field{margin-bottom:14px}
+  .field label{display:block; font-size:12px; color:var(--text-dim); margin-bottom:6px; text-transform:uppercase; letter-spacing:.5px}
+  .rules-body h4{font-family:var(--serif); color:var(--gold); margin:16px 0 6px}
+  .rules-body p, .rules-body li{font-size:13.5px; line-height:1.6; color:var(--text-dim)}
+  .rules-body ul{margin:4px 0; padding-left:20px}
+
+  /* ---------- Player view ---------- */
+  #player-view{display:none; flex:1; min-height:0; overflow-y:auto; padding:22px; flex-direction:column; align-items:center;}
+  .player-grid-wrap{position:relative; margin-bottom:22px; display:flex; gap:30px; align-items:flex-start; flex-wrap:wrap; width:100%; max-width:1100px; justify-content:center;}
+  .player-left-col{flex:0 0 auto; display:flex; flex-direction:column; align-items:center; gap:16px;}
+  .player-palette{display:flex; gap:8px; flex-wrap:wrap; background:var(--panel); padding:10px; border-radius:8px; border:1px solid var(--line); max-width:640px; justify-content:center;}
+  .player-char{width:42px; height:42px; border-radius:50%; border:2px solid var(--line2); display:flex; align-items:center; justify-content:center; font-family:var(--serif); font-size:19px; font-weight:700; color:#fff; cursor:pointer; background:var(--panel2); user-select:none;}
+  .player-char.victim{border-color:var(--evidence); color:var(--evidence);}
+  .player-char.blocker{border-color:var(--text-faint); color:var(--text-faint); margin-left:16px;}
+  .player-char.active{border-color:var(--violet-bright); background:var(--violet-dim); box-shadow:0 0 10px rgba(138,107,255,0.5);}
+  .player-char.placed{opacity:0.3; cursor:not-allowed;}
+  #boardContainer{position:relative; display:inline-block;}
+  #board, #hoverOverlay, #boardOverlay{display:block;}
+  #hoverOverlay, #boardOverlay{position:absolute; top:0; left:0; pointer-events:none;}
+  #boardOverlay{z-index:10;}
+  #clickLayer{position:absolute; top:0; left:0; width:100%; height:100%; cursor:pointer; z-index:1;}
+
+  .player-right-col{flex:1 1 320px; min-width:300px; max-width:640px; display:flex; flex-direction:column;}
+  #result{display:none; text-align:center; padding:14px; margin-bottom:18px; font-weight:800; font-size:18px; border-radius:8px; letter-spacing:.4px;}
+  .rules-link-row{text-align:right; margin-bottom:10px;}
+  .rules-link-row a{font-size:13px; text-decoration:underline; cursor:pointer;}
+  #clues{display:flex; gap:20px; align-items:start; flex-wrap:wrap;}
+  .clue-col{display:flex; flex-direction:column; gap:16px; flex:1; min-width:230px; max-width:320px;}
+  .grp{transition:all .3s ease; background:#fff; color:var(--ink); border:1px solid var(--line2); padding:14px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,.25);}
+  .grp .gh{display:flex; align-items:center; gap:10px; cursor:pointer;}
+  .grp .avatar{width:38px; height:38px; flex-shrink:0;}
+  .grp .badge{display:inline-block; background:var(--violet-dim); color:#fff; font-weight:700; font-size:12px; border-radius:5px; padding:1px 6px; margin-right:4px;}
+  .grp .name{font-weight:700; font-size:14px;}
+  .grp .traits{font-size:10.5px; opacity:.75; margin-top:2px;}
+  .grp .txt{font-size:14px; padding-top:8px; line-height:1.45;}
+
+  #legend{max-width:900px; width:100%; margin-top:8px; background:var(--paper); padding:18px; border-radius:8px; color:var(--ink);}
+  #legend h3{font-family:var(--serif); margin-top:0; color:var(--ink); border-bottom:1px solid var(--paper-line); padding-bottom:8px; margin-bottom:12px; font-size:16px;}
+  .legend-grid{display:flex; flex-wrap:wrap; gap:18px; align-items:center; font-size:13.5px;}
+
+  #toast{position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#2a2130; color:#fff; padding:12px 20px; border-radius:8px; border:1px solid var(--line2); font-size:13.5px; z-index:200; opacity:0; pointer-events:none; transition:opacity .25s; max-width:90vw; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,.4);}
+  #toast.show{opacity:1;}
+  #toast.err{border-color:var(--evidence); background:#3a1a17;}
+
+  .empty-state{color:var(--text-faint); font-size:14px; padding:30px; text-align:center;}
+  .spinner{width:18px; height:18px; border:2.5px solid var(--line2); border-top-color:var(--violet-bright); border-radius:50%; animation:spin .8s linear infinite; display:inline-block; vertical-align:-4px;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  @media (max-width: 1024px) {
+    header{padding:10px 12px;}
+    #legend { display: none !important; }
+    #player-view { padding: 10px; }
+    .player-palette { flex-direction: row; width: 100%; justify-content: center; gap: 6px; padding: 8px; box-sizing: border-box; }
+    .player-char { width: auto; height: auto; flex: 1 1 0; aspect-ratio: 1; max-width: 44px; font-size: clamp(12px, 3.5vw, 18px); }
+    .player-char.blocker{margin-left:8px;}
+    .player-grid-wrap { flex-direction: column !important; gap: 14px; flex-wrap: nowrap !important; width: 100%; align-items: center; }
+    .player-left-col { width: 100%; max-width: 100vw; position: sticky; top: 0; z-index: 20; background: var(--ink); padding-bottom: 10px; border-bottom: 1px solid var(--line); box-shadow: 0 8px 15px rgba(0,0,0,0.5); }
+    #boardContainer { touch-action: manipulation; width: 100%; max-width: 500px; display: flex; justify-content: center; }
+    #board, #hoverOverlay, #boardOverlay { width: 100% !important; height: auto !important; max-width: 100vw; }
+    .player-right-col { width: 100%; max-width:100%; padding-bottom: 20px; }
+    .rules-link-row { text-align: center !important; }
+    #clues { flex-direction: row !important; flex-wrap: wrap !important; gap: 12px; width: 100% !important; }
+    .clue-col { display: contents !important; }
+    .grp{flex:1 1 260px; max-width:none;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <span class="tab">MURDO<span style="color:#fff">KU</span></span>
+    <h1>Player</h1>
+  </div>
+  <div class="spacer"></div>
+  <button class="btn" id="btnChangeMap">🗺️ Cambia mappa</button>
+  <button class="btn ghost" id="btnRules">📖 Regole del gioco</button>
+</header>
+
+<main>
+  <!-- ============ MODALE SELEZIONE / CARICAMENTO MAPPA ============ -->
+  <div class="modal" id="mapModal">
+    <div class="box">
+      <div class="mh"><h3>Scegli una mappa</h3></div>
+      <div class="mb">
+        <div class="tabs">
+          <button class="active" id="tabSelectBtn" type="button">📁 Dalla cartella Mappe</button>
+          <button id="tabPasteBtn" type="button">📋 Incolla mappa</button>
+        </div>
+
+        <div id="tabSelect">
+          <div class="field">
+            <label>Mappa disponibile</label>
+            <select id="mapSelect" disabled><option>Caricamento elenco…</option></select>
+          </div>
+          <div class="hint" id="mapListHint">Sto cercando le mappe nella cartella <code>Mappe/</code> del repository…</div>
+        </div>
+
+        <div id="tabPaste" style="display:none">
+          <div class="field">
+            <label>Testo mappa (file .md esportato dall'Editor)</label>
+            <textarea id="pasteText" placeholder="Incolla qui il contenuto del file .md, oppure solo il commento MURDOKU_STATE_B64…"></textarea>
+          </div>
+          <button class="btn" id="btnPasteClip" type="button">📋 Incolla dagli appunti</button>
+        </div>
+      </div>
+      <div class="mf">
+        <span id="modalMsg" style="flex:1; align-self:center; font-size:12.5px; color:var(--text-faint)"></span>
+        <button class="btn primary" id="btnLoadMap" type="button">🎮 Gioca questa mappa</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ MODALE REGOLE ============ -->
+  <div class="modal" id="rulesModal">
+    <div class="box">
+      <div class="mh"><h3>Regole del gioco</h3><span style="flex:1"></span><button class="btn ghost" id="btnCloseRules" type="button">Chiudi</button></div>
+      <div class="mb rules-body">
+        <h4>Obiettivo</h4>
+        <p>Un delitto è stato commesso. Usa gli indizi per dedurre in quale cella si trova ciascun sospetto (e la vittima), e smaschera l'assassino.</p>
+        <h4>Regole della griglia</h4>
+        <ul>
+          <li>Ogni persona occupa una cella diversa: <b>una sola persona per riga</b> e <b>una sola per colonna</b>.</li>
+          <li>Gli oggetti "ostacolo" (es. tavoli, armadi) non possono essere occupati; quelli "calpestabili" (es. tappeti, sedie) sì.</li>
+          <li>I muri bloccano il passaggio e delimitano le stanze; "accanto" significa celle adiacenti nella stessa stanza.</li>
+          <li>La vittima si trova da sola con l'assassino: nella sua stanza c'è un solo sospetto.</li>
+        </ul>
+        <h4>Come si gioca</h4>
+        <ul>
+          <li>Seleziona un personaggio dalla tavolozza in alto/a sinistra.</li>
+          <li><b>Un click</b> su una cella = segna un appunto (ipotesi provvisoria, fino a 4 per cella).</li>
+          <li><b>Doppio click</b> (o doppio tap su mobile) = piazza definitivamente il personaggio in quella cella.</li>
+          <li>Click su un personaggio già piazzato, o su un appunto, per rimuoverlo.</li>
+          <li>La "X" (cella bloccata) si piazza con un solo click: usala per segnare le celle che hai escluso.</li>
+          <li>Quando tutti i sospetti e la vittima sono piazzati, il gioco ti dice se hai trovato l'assassino.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PLAYER ============ -->
+  <div id="player-view">
+    <div class="player-grid-wrap" id="gridWrap">
+      <div class="player-left-col">
+        <div class="player-palette" id="palette"></div>
+        <div id="boardContainer">
+          <svg id="board" xmlns="http://www.w3.org/2000/svg"></svg>
+          <svg id="boardOverlay" xmlns="http://www.w3.org/2000/svg"></svg>
+          <svg id="hoverOverlay" xmlns="http://www.w3.org/2000/svg"></svg>
+          <div id="clickLayer"></div>
+        </div>
+      </div>
+      <div class="player-right-col">
+        <div id="result"></div>
+        <div class="rules-link-row"><a id="rulesLink2">Regole del gioco</a></div>
+        <div id="clues"></div>
+      </div>
+    </div>
+    <div id="legend"></div>
+  </div>
+</main>
+
+<div id="toast"></div>
+
+<script>
+"use strict";
+
+/* =====================================================================
+   CONFIGURAZIONE REPOSITORY
+   ===================================================================== */
+const GH_OWNER = "NumaPompilio";
+const GH_REPO  = "Murdoku-Player";
+const GH_BRANCH = "main";
+const MAPS_DIR = "Mappe";
+const OBJECTS_DIR = "assets/objects";
+
+function rawMapUrl(filename){
+  return `https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/${GH_BRANCH}/${MAPS_DIR}/${encodeURIComponent(filename)}`;
+}
+function apiMapsListUrl(){
+  return `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${MAPS_DIR}?ref=${GH_BRANCH}&t=${Date.now()}`;
+}
+
+/* =====================================================================
+   TOAST
+   ===================================================================== */
+let toastTimer = null;
+function toast(msg, isErr){
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.toggle("err", !!isErr);
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> el.classList.remove("show"), 3600);
+}
+
+/* =====================================================================
+   MOTORE GEOMETRIA MAPPA (porting da Murdoku Editor / MurdokuEngine)
+   ===================================================================== */
+const OBJECT_LIB = {}; // kind -> {label, walkable}
+function objLabel(kind){ return (OBJECT_LIB[kind] && OBJECT_LIB[kind].label) || kind; }
+function objWalkable(kind){ return !!(OBJECT_LIB[kind] && OBJECT_LIB[kind].walkable); }
+
+function keyRC(r,c){ return r+","+c; }
+function wallKey(a,b){
+  const A = keyRC(a.row,a.col), B = keyRC(b.row,b.col);
+  return A < B ? A+"|"+B : B+"|"+A;
+}
+function inBounds(m,r,c){ return r>=0 && c>=0 && r<m.size && c<m.size; }
+function cellAt(m,r,c){ return m.cells[r*m.size+c]; }
+function isOccupiable(m,r,c){
+  const cell = cellAt(m,r,c);
+  if(!cell.walkable) return false;
+  if(cell.object && !objWalkable(cell.object)) return false;
+  return true;
+}
+function hasWall(m,r1,c1,r2,c2){
+  if(r1<0||r1>=m.size||c1<0||c1>=m.size||r2<0||r2>=m.size||c2<0||c2>=m.size) return true;
+  const k = wallKey({row:r1,col:c1},{row:r2,col:c2});
+  return m.walls.has(k) || (m.windows && m.windows.has(k)) || (m.doors && m.doors.has(k));
+}
+function isWindow(m,r1,c1,r2,c2){
+  return m.windows && m.windows.has(wallKey({row:r1,col:c1},{row:r2,col:c2}));
+}
+function isDoor(m,r1,c1,r2,c2){
+  return m.doors && m.doors.has(wallKey({row:r1,col:c1},{row:r2,col:c2}));
+}
+const DIRS = [[-1,0],[1,0],[0,-1],[0,1]];
+function emptyMap(size){
+  const cells=[];
+  for(let r=0;r<size;r++) for(let c=0;c<size;c++) cells.push({row:r,col:c,walkable:true});
+  return {size,cells,walls:new Set(),windows:new Set(),doors:new Set(),entities:[],suspectCount:0,areaNames:{}};
+}
+function computeAreas(m){
+  const size = m.size;
+  const region = new Array(size*size).fill(-1);
+  let id = 0;
+  const areas = [];
+  for(let r=0;r<size;r++) for(let c=0;c<size;c++){
+    if(region[r*size+c] !== -1) continue;
+    const cellsList = [];
+    const stack = [[r,c]]; region[r*size+c] = id;
+    while(stack.length){
+      const [cr,cc] = stack.pop();
+      cellsList.push({row:cr,col:cc});
+      for(const [dr,dc] of DIRS){
+        const nr=cr+dr, nc=cc+dc;
+        if(!inBounds(m,nr,nc)) continue;
+        if(hasWall(m,cr,cc,nr,nc)) continue;
+        if(region[nr*size+nc] !== -1) continue;
+        region[nr*size+nc]=id; stack.push([nr,nc]);
+      }
+    }
+    areas.push({id, cells:cellsList}); id++;
+  }
+  const areaOf = new Array(size*size).fill(-1);
+  for(let r=0;r<size;r++) for(let c=0;c<size;c++)
+    if(isOccupiable(m,r,c)) areaOf[r*size+c] = region[r*size+c];
+  const visualArea = region.slice();
+  return { areaOf, visualArea, areas, count:id, region };
+}
+
+function deserializeMap(data){
+  const m = emptyMap(data.size);
+  for(const c of data.cells){
+    const cell = cellAt(m,c.row,c.col);
+    cell.walkable = c.walkable !== false;
+    if(c.object) cell.object = c.object;
+  }
+  m.walls = new Set(data.walls||[]);
+  m.windows = new Set(data.windows||[]);
+  m.doors = new Set(data.doors||[]);
+  m.areaNames = data.areaNames || {};
+  m.areaFloors = data.areaFloors ? Object.assign({}, data.areaFloors) : {};
+  m.entities = (data.entities||[]).map(e=>({...e}));
+  m.suspectCount = data.suspectCount || 0;
+  return m;
+}
+
+/* =====================================================================
+   RENDERING: colori area, pattern pavimenti, glifi oggetti, avatar
+   ===================================================================== */
+function areaColor(id){
+  if(id<0) return "#cfc6b4";
+  const hue = (id*137.508) % 360;
+  return `hsl(${hue.toFixed(1)} 46% 82%)`;
+}
+function svgDefs(){
+  return `<defs>
+    <pattern id="pattern-pavimento" width="32" height="32" patternUnits="userSpaceOnUse">
+      <rect width="32" height="32" fill="#e3caa5"/>
+      <rect x="0" y="0" width="16" height="8" fill="#dfc39a" opacity="0.4"/>
+      <rect x="0" y="16" width="20" height="8" fill="#ebd6b6" opacity="0.35"/>
+      <rect x="8" y="24" width="24" height="8" fill="#dcbfa0" opacity="0.3"/>
+      <line x1="0" y1="8" x2="32" y2="8" stroke="#b39268" stroke-width="0.8"/>
+      <line x1="0" y1="16" x2="32" y2="16" stroke="#b39268" stroke-width="0.8"/>
+      <line x1="0" y1="24" x2="32" y2="24" stroke="#b39268" stroke-width="0.8"/>
+      <line x1="16" y1="0" x2="16" y2="8" stroke="#b39268" stroke-width="0.8"/>
+      <line x1="0" y1="8" x2="0" y2="16" stroke="#b39268" stroke-width="0.8"/>
+      <line x1="32" y1="8" x2="32" y2="16" stroke="#b39268" stroke-width="0.8"/>
+      <line x1="20" y1="16" x2="20" y2="24" stroke="#b39268" stroke-width="0.8"/>
+      <line x1="8" y1="24" x2="8" y2="32" stroke="#b39268" stroke-width="0.8"/>
+    </pattern>
+    <pattern id="pattern-prato" width="32" height="32" patternUnits="userSpaceOnUse">
+      <rect width="32" height="32" fill="#a4d18c"/>
+      <path d="M 6 26 q -2 -9 2 -14 q 3 5 2 14 Z M 10 28 q 1 -11 6 -16 q -1 7 -2 16 Z M 22 14 q -2 -7 1 -11 q 2 4 2 11 Z M 25 15 q 2 -8 5 -12 q -1 5 -1 12 Z" fill="#6f9e52" opacity="0.65"/>
+      <circle cx="16" cy="20" r="1" fill="#88b56d"/>
+    </pattern>
+    <pattern id="pattern-terra" width="32" height="32" patternUnits="userSpaceOnUse">
+      <rect width="32" height="32" fill="#d4b292"/>
+      <ellipse cx="8" cy="10" rx="3" ry="2" fill="#9e7b57" opacity="0.5"/>
+      <ellipse cx="24" cy="22" rx="4" ry="2.5" fill="#8f6c49" opacity="0.45"/>
+      <circle cx="18" cy="8" r="1.2" fill="#7d5937" opacity="0.5"/>
+      <circle cx="12" cy="26" r="1.5" fill="#7d5937" opacity="0.45"/>
+      <path d="M 2 18 q 6 2 10 -1 M 20 28 q 5 -2 9 1" stroke="#9e7b57" stroke-width="0.9" fill="none" opacity="0.4"/>
+    </pattern>
+    <pattern id="pattern-mare" width="36" height="24" patternUnits="userSpaceOnUse">
+      <rect width="36" height="24" fill="#9cd0ea"/>
+      <path d="M 0 8 q 9 -4 18 0 t 18 0 M 0 20 q 9 -4 18 0 t 18 0" fill="none" stroke="#488cb8" stroke-width="1.3" opacity="0.6"/>
+      <path d="M 9 14 q 9 -3 18 0" fill="none" stroke="#ffffff" stroke-width="0.9" opacity="0.7"/>
+    </pattern>
+    <pattern id="pattern-spiaggia" width="32" height="32" patternUnits="userSpaceOnUse">
+      <rect width="32" height="32" fill="#f2deaa"/>
+      <circle cx="6" cy="7" r="1.1" fill="#c4aa6c" opacity="0.55"/>
+      <circle cx="20" cy="12" r="1" fill="#c4aa6c" opacity="0.5"/>
+      <circle cx="12" cy="24" r="1.3" fill="#bfa361" opacity="0.6"/>
+      <circle cx="27" cy="26" r="0.9" fill="#c4aa6c" opacity="0.5"/>
+      <path d="M 0 16 q 8 3 16 0 t 16 0" fill="none" stroke="#d4be83" stroke-width="1" opacity="0.55"/>
+    </pattern>
+    <pattern id="pattern-asfalto" width="32" height="32" patternUnits="userSpaceOnUse">
+      <rect width="32" height="32" fill="#5c5c5c"/>
+      <circle cx="5" cy="5" r="1" fill="#444" opacity="0.6"/>
+      <circle cx="25" cy="8" r="1.5" fill="#777" opacity="0.4"/>
+      <circle cx="12" cy="20" r="1" fill="#333" opacity="0.5"/>
+      <circle cx="28" cy="26" r="1" fill="#888" opacity="0.4"/>
+      <circle cx="18" cy="30" r="1.5" fill="#444" opacity="0.6"/>
+      <circle cx="8" cy="28" r="1" fill="#777" opacity="0.4"/>
+      <circle cx="20" cy="14" r="1" fill="#333" opacity="0.5"/>
+      <circle cx="2" cy="16" r="1.2" fill="#888" opacity="0.4"/>
+    </pattern>
+    <pattern id="pattern-mattonelle" width="32" height="32" patternUnits="userSpaceOnUse">
+      <rect width="32" height="32" fill="#f0f0f0"/>
+      <rect x="16" y="0" width="16" height="16" fill="#3b3b3b"/>
+      <rect x="0" y="16" width="16" height="16" fill="#3b3b3b"/>
+    </pattern>
+    <pattern id="pattern-ghiaccio" width="32" height="32" patternUnits="userSpaceOnUse">
+      <rect width="32" height="32" fill="#d4f1f9"/>
+      <path d="M 0 12 L 10 16 L 24 8 M 10 16 L 16 32 M 24 8 L 32 14" stroke="#ffffff" stroke-width="1.5" fill="none" opacity="0.8"/>
+      <path d="M 4 0 L 12 8 L 8 20 M 12 8 L 28 2" stroke="#b2ebf2" stroke-width="1" fill="none" opacity="0.7"/>
+    </pattern>
+  </defs>`;
+}
+function getAreaFill(m, aid){
+  if(aid < 0) return "#cfc6b4";
+  const floor = m && m.areaFloors && m.areaFloors[aid];
+  if(floor){
+    if(floor.type === "pattern" && floor.value) return `url(#pattern-${floor.value})`;
+    if(floor.type === "color" && floor.value) return floor.value;
+  }
+  return areaColor(aid);
+}
+
+/* Catalogo immagini oggetti: assets/objects/<kind>.png, con fallback a un
+   segnaposto colorato+monogramma se il file non è (ancora) presente. */
+const IMG_STATUS = {};
+function objImageUrl(kind){ return `${OBJECTS_DIR}/${encodeURIComponent(kind)}.png`; }
+function probeObjectImages(){
+  const kinds = Object.keys(OBJECT_LIB);
+  return Promise.all(kinds.map(kind => new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => { IMG_STATUS[kind] = "ok"; resolve(); };
+    img.onerror = () => { IMG_STATUS[kind] = "missing"; resolve(); };
+    img.src = objImageUrl(kind);
+  })));
+}
+function hashHue(str){
+  let h = 0;
+  for(let i=0;i<str.length;i++) h = (h*31 + str.charCodeAt(i)) >>> 0;
+  return h % 360;
+}
+function objectMonogram(kind){
+  const label = objLabel(kind);
+  const parts = label.split(/[\s_]+/).filter(Boolean);
+  if(parts.length >= 2) return (parts[0][0]+parts[1][0]).toUpperCase();
+  return label.slice(0,3).toUpperCase();
+}
+/* cx,cy = centro cella; CS = lato cella. L'immagine reale occupa il 120% di CS. */
+function objectMarkup(kind, cx, cy, CS){
+  const walkable = objWalkable(kind);
+  if(IMG_STATUS[kind] === "ok"){
+    const size = CS * 1.2;
+    return `<image href="${objImageUrl(kind)}" x="${(cx-size/2).toFixed(1)}" y="${(cy-size/2).toFixed(1)}" width="${size.toFixed(1)}" height="${size.toFixed(1)}" preserveAspectRatio="xMidYMid meet" opacity="${walkable?0.94:1}" style="pointer-events:none"/>`;
+  }
+  const hue = hashHue(kind);
+  const fill = `hsl(${hue} 42% ${walkable ? 74 : 56}%)`;
+  const s = CS * 0.64;
+  return `<g pointer-events="none">
+    <rect x="${(cx-s/2).toFixed(1)}" y="${(cy-s/2).toFixed(1)}" width="${s.toFixed(1)}" height="${s.toFixed(1)}" rx="${(s*0.16).toFixed(1)}" fill="${fill}" stroke="rgba(0,0,0,0.35)" stroke-width="1.2"/>
+    <text x="${cx.toFixed(1)}" y="${cy.toFixed(1)}" font-family="var(--sans)" font-weight="800" font-size="${(s*0.4).toFixed(1)}" fill="#1a1420" text-anchor="middle" dominant-baseline="central">${objectMonogram(kind)}</text>
+  </g>`;
+}
+
+function charAvatarSVG(s){
+  const color = "#5b48a8", skin = "#f5cfa0", hair = "#3e2a14";
+  let out = `<svg width="100%" height="100%" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">`;
+  out += `<circle cx="50" cy="50" r="48" fill="#f8f9fa" stroke="#e0e0e0" stroke-width="2"/>`;
+  out += `<defs><clipPath id="avatarClip_${s.id}"><circle cx="50" cy="50" r="48" /></clipPath></defs>`;
+  out += `<g clip-path="url(#avatarClip_${s.id})">`;
+  out += `<path d="M 20 100 Q 50 40 80 100 Z" fill="${color}" />`;
+  out += `<rect x="42" y="60" width="16" height="20" fill="#e5bc8f" />`;
+  if(s.gender === "F") out += `<path d="M 25 45 L 25 80 Q 50 90 75 80 L 75 45 Z" fill="${hair}" />`;
+  out += `<circle cx="50" cy="45" r="22" fill="${skin}" />`;
+  if(s.gender === "F"){
+    out += `<path d="M 28 45 C 35 20, 65 20, 72 45 C 65 30, 35 30, 28 45 Z" fill="${hair}" />`;
+  } else {
+    out += `<path d="M 28 45 C 25 15, 75 15, 72 45 C 75 25, 25 25, 28 45 Z" fill="${hair}" />`;
+  }
+  out += `<circle cx="42" cy="45" r="2.5" fill="#333" /><circle cx="58" cy="45" r="2.5" fill="#333" />`;
+  if(s.hasGlasses){
+    out += `<circle cx="42" cy="45" r="7.5" fill="none" stroke="#222" stroke-width="2.5"/>`;
+    out += `<circle cx="58" cy="45" r="7.5" fill="none" stroke="#222" stroke-width="2.5"/>`;
+    out += `<line x1="49.5" y1="45" x2="50.5" y2="45" stroke="#222" stroke-width="2.5"/>`;
+    out += `<line x1="28" y1="42" x2="34.5" y2="45" stroke="#222" stroke-width="2.5"/>`;
+    out += `<line x1="72" y1="42" x2="65.5" y2="45" stroke="#222" stroke-width="2.5"/>`;
+  }
+  if(s.hasHat){
+    out += `<ellipse cx="50" cy="22" rx="30" ry="6" fill="#444" />`;
+    out += `<path d="M 33 22 C 33 5, 67 5, 67 22 Z" fill="#333" />`;
+    out += `<path d="M 33 22 C 33 18, 67 18, 67 22 Z" fill="#b33939" />`;
+  }
+  out += `</g></svg>`;
+  return out;
+}
+
+function escapeXml(t){ return String(t).replace(/[<>&]/g, x=>({"<":"&lt;",">":"&gt;","&":"&amp;"}[x])); }
+function escapeHtml(t){ return String(t).replace(/[<>&]/g, x=>({"<":"&lt;",">":"&gt;","&":"&amp;"}[x])); }
+
+/* =====================================================================
+   STATO GIOCO
+   ===================================================================== */
+let playerState = {
+  map: null,
+  clues: null,
+  entities: [],
+  placed: {},   // "r_c" -> charObj
+  notes: {},    // "r_c" -> [charObj...]
+  activeChar: null,
+  cellSize: 0,
+  padding: 26,
+  charsList: [],
+  hoverR: -1, hoverC: -1,
+};
+
+function $(sel){ return document.querySelector(sel); }
+
+/* =====================================================================
+   CARICAMENTO CATALOGO OGGETTI (assets/objects/manifest.json)
+   ===================================================================== */
+async function loadObjectManifest(){
+  const res = await fetch(`${OBJECTS_DIR}/manifest.json`, {cache:"no-store"});
+  if(!res.ok) throw new Error("manifest.json non trovato ("+res.status+")");
+  const arr = await res.json();
+  for(const o of arr){
+    OBJECT_LIB[o.id] = { label:o.label || o.id, walkable: !!o.walkable };
+  }
+}
+
+/* =====================================================================
+   CARICAMENTO ELENCO MAPPE (Mappe/index.json, fallback GitHub API)
+   ===================================================================== */
+async function loadMapsList(){
+  try{
+    const res = await fetch(`${MAPS_DIR}/index.json`, {cache:"no-store"});
+    if(res.ok){
+      const arr = await res.json();
+      if(Array.isArray(arr) && arr.length) return arr.map(x => ({file:x.file, title:x.title || x.file}));
+    }
+  }catch(e){ /* fall through */ }
+
+  try{
+    const res = await fetch(apiMapsListUrl());
+    if(res.ok){
+      const arr = await res.json();
+      const files = arr.filter(it => it.type === "file" && /\.md$/i.test(it.name));
+      if(files.length) return files.map(it => ({file:it.name, title:it.name.replace(/\.md$/i,"")}));
+    }
+  }catch(e){ /* fall through */ }
+
+  return [];
+}
+
+async function fetchMapFileText(filename){
+  try{
+    const res = await fetch(`${MAPS_DIR}/${encodeURIComponent(filename)}`, {cache:"no-store"});
+    if(res.ok) return await res.text();
+  }catch(e){ /* fall through */ }
+  const res2 = await fetch(rawMapUrl(filename));
+  if(!res2.ok) throw new Error("Impossibile scaricare la mappa ("+res2.status+")");
+  return await res2.text();
+}
+
+function parseStateFromText(text){
+  const match = text.match(/<!--\s*MURDOKU_STATE_B64:\s*([\s\S]*?)\s*-->/);
+  let jsonStr;
+  if(match && match[1]){
+    jsonStr = decodeURIComponent(escape(atob(match[1].trim())));
+  } else {
+    jsonStr = text.trim();
+  }
+  const data = JSON.parse(jsonStr);
+  if(!data.size || !data.cells) throw new Error("Dati mappa non validi (manca size/cells)");
+  return data;
+}
+
+function applyMapData(data, mapId){
+  const m = deserializeMap(data);
+  playerState.map = m;
+  playerState.clues = data.clues || [];
+  playerState.entities = m.entities || [];
+  playerState.placed = {};
+  playerState.notes = {};
+  playerState.activeChar = null;
+  playerState.mapId = mapId || null;
+  renderPlayerUI();
+}
+
+/* =====================================================================
+   UI: MODALE SELEZIONE MAPPA
+   ===================================================================== */
+let mapsListCache = null;
+
+function switchTab(which){
+  $("#tabSelectBtn").classList.toggle("active", which==="select");
+  $("#tabPasteBtn").classList.toggle("active", which==="paste");
+  $("#tabSelect").style.display = which==="select" ? "block" : "none";
+  $("#tabPaste").style.display = which==="paste" ? "block" : "none";
+}
+$("#tabSelectBtn").addEventListener("click", ()=>switchTab("select"));
+$("#tabPasteBtn").addEventListener("click", ()=>switchTab("paste"));
+
+async function openMapModal(refresh){
+  $("#mapModal").classList.add("active");
+  if(refresh || !mapsListCache){
+    const sel = $("#mapSelect");
+    sel.disabled = true;
+    sel.innerHTML = `<option>Caricamento elenco…</option>`;
+    $("#mapListHint").textContent = "Sto cercando le mappe nella cartella Mappe/ del repository…";
+    try{
+      mapsListCache = await loadMapsList();
+    }catch(e){
+      mapsListCache = [];
+    }
+    sel.disabled = false;
+    if(mapsListCache.length === 0){
+      sel.innerHTML = `<option value="">— nessuna mappa trovata —</option>`;
+      $("#mapListHint").textContent = "Nessuna mappa trovata (offline o repository senza connessione). Usa \"Incolla mappa\" per giocare comunque.";
+      switchTab("paste");
+    } else {
+      sel.innerHTML = mapsListCache.map(m => `<option value="${escapeHtml(m.file)}">${escapeHtml(m.title)}</option>`).join("");
+      $("#mapListHint").textContent = `${mapsListCache.length} mappa/e trovate in ${MAPS_DIR}/.`;
+    }
+  }
+}
+
+$("#btnChangeMap").addEventListener("click", ()=> openMapModal(true));
+
+$("#btnLoadMap").addEventListener("click", async () => {
+  const btn = $("#btnLoadMap");
+  const isPaste = $("#tabPasteBtn").classList.contains("active");
+  btn.disabled = true;
+  $("#modalMsg").textContent = "Caricamento…";
+  try{
+    if(isPaste){
+      const text = $("#pasteText").value;
+      if(!text.trim()) throw new Error("Il testo è vuoto.");
+      const data = parseStateFromText(text);
+      applyMapData(data, null);
+    } else {
+      const file = $("#mapSelect").value;
+      if(!file) throw new Error("Seleziona una mappa dall'elenco.");
+      const text = await fetchMapFileText(file);
+      const data = parseStateFromText(text);
+      applyMapData(data, file.replace(/\.md$/i,""));
+    }
+    $("#mapModal").classList.remove("active");
+    $("#modalMsg").textContent = "";
+  }catch(err){
+    toast("Errore: " + err.message, true);
+  }finally{
+    btn.disabled = false;
+  }
+});
+
+$("#btnPasteClip").addEventListener("click", async () => {
+  try{
+    const text = await navigator.clipboard.readText();
+    $("#pasteText").value = text;
+  }catch(err){
+    toast("Impossibile leggere gli appunti: " + err.message, true);
+  }
+});
+
+$("#btnRules").addEventListener("click", ()=> $("#rulesModal").classList.add("active"));
+$("#rulesLink2").addEventListener("click", (e)=>{ e.preventDefault(); $("#rulesModal").classList.add("active"); });
+$("#btnCloseRules").addEventListener("click", ()=> $("#rulesModal").classList.remove("active"));
+
+/* =====================================================================
+   RENDER PRINCIPALE
+   ===================================================================== */
+function renderPlayerUI(){
+  const m = playerState.map;
+  if(!m) return;
+  $("#player-view").style.display = "flex";
+
+  const chars = playerState.entities.map(e => ({
+    id: e.id,
+    initial: e.initial || (e.kind==="victim" ? "✖" : e.name.charAt(0)),
+    kind: e.kind, name: e.name, gender: e.gender, hasHat: e.hasHat, hasGlasses: e.hasGlasses
+  }));
+  chars.push({ id:"_blocker", initial:"X", kind:"blocker", name:"Cella Bloccata" });
+  playerState.charsList = chars;
+
+  updatePalette();
+  drawGrid();
+  updateOverlay();
+  renderLegend();
+  renderClues();
+}
+
+function updatePalette(){
+  const pal = $("#palette");
+  pal.innerHTML = "";
+  playerState.charsList.forEach(char => {
+    let isPlaced = false;
+    if(char.id !== "_blocker"){
+      for(const k in playerState.placed) if(playerState.placed[k].id === char.id) isPlaced = true;
+    }
+    const div = document.createElement("div");
+    div.className = "player-char" + (char.kind==="victim" ? " victim" : "") + (char.kind==="blocker" ? " blocker" : "");
+    if(isPlaced) div.classList.add("placed");
+    if(playerState.activeChar && playerState.activeChar.id === char.id) div.classList.add("active");
+    div.textContent = char.initial;
+    let tooltip = char.name;
+    if(char.kind === "suspect") tooltip += ` (${char.gender==='M'?'Uomo':'Donna'}${char.hasHat?', cappello':''}${char.hasGlasses?', occhiali':''})`;
+    div.title = tooltip;
+    div.addEventListener("click", () => {
+      if(isPlaced) return;
+      playerState.activeChar = (playerState.activeChar === char) ? null : char;
+      updatePalette();
+    });
+    pal.appendChild(div);
+  });
+}
+
+function drawGrid(){
+  const m = playerState.map;
+  const svg = $("#board");
+  const N = m.size;
+  const CS = Math.max(38, Math.min(60, Math.floor(560/N)));
+  playerState.cellSize = CS;
+  const P = playerState.padding;
+  const W = P + N*CS + 8, H = P + N*CS + 8;
+  const analysis = computeAreas(m);
+
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.setAttribute("width", W);
+  svg.setAttribute("height", H);
+
+  let s = svgDefs();
+  s += `<rect x="${P-4}" y="${P-4}" width="${N*CS+8}" height="${N*CS+8}" rx="6" fill="var(--paper)"/>`;
+
+  // pass 1: pavimenti
+  for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+    const x=P+c*CS, y=P+r*CS;
+    const cell = cellAt(m,r,c);
+    let fill;
+    if(!cell.walkable && !cell.object) fill = "#2c2534";
+    else fill = getAreaFill(m, analysis.visualArea[r*N+c]);
+    s += `<rect x="${x}" y="${y}" width="${CS}" height="${CS}" fill="${fill}" stroke="var(--paper-line)" stroke-width="1"/>`;
+    if(cell.object && !objWalkable(cell.object)){
+      s += `<rect x="${x}" y="${y}" width="${CS}" height="${CS}" fill="rgba(0,0,0,0.08)" pointer-events="none"/>`;
+    }
+  }
+  // pass 2: oggetti (possono sconfinare del 20% sulle celle vicine)
+  for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+    const cell = cellAt(m,r,c);
+    if(!cell.object) continue;
+    const x=P+c*CS, y=P+r*CS;
+    s += objectMarkup(cell.object, x+CS/2, y+CS/2, CS);
+  }
+  // pass 3: etichette oggetti (sempre leggibili, sopra eventuali sconfinamenti)
+  for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+    const cell = cellAt(m,r,c);
+    if(!cell.object) continue;
+    const x=P+c*CS, y=P+r*CS;
+    const label = objLabel(cell.object);
+    const textLenAttr = label.length > 8 ? ` textLength="${CS-4}" lengthAdjust="spacingAndGlyphs"` : "";
+    s += `<rect x="${x+1}" y="${y+CS-13}" width="${CS-2}" height="12" fill="rgba(244,239,228,0.82)" pointer-events="none"/>`;
+    s += `<text x="${x+CS/2}" y="${y+CS-3}" font-size="8" fill="#000" font-weight="bold" font-family="var(--sans)" text-anchor="middle" pointer-events="none"${textLenAttr}>${escapeXml(label)}</text>`;
+  }
+
+  const centroid = {};
+  for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+    const a = analysis.areaOf[r*N+c]; if(a<0) continue;
+    (centroid[a]=centroid[a]||{sx:0,sy:0,n:0}); centroid[a].sx+=c; centroid[a].sy+=r; centroid[a].n++;
+  }
+  for(const a in centroid){
+    const g = centroid[a]; const cx=P+(g.sx/g.n+0.5)*CS, cy=P+(g.sy/g.n+0.5)*CS;
+    const nm = (m.areaNames && m.areaNames[a]) || ("Area "+(+a+1));
+    s += `<text x="${cx}" y="${cy}" font-size="16" fill="#6a5f4a" text-anchor="middle" opacity="0.55" pointer-events="none" font-family="var(--mono)" style="text-transform:uppercase; letter-spacing:1px; font-weight:700">${escapeXml(nm)}</text>`;
+  }
+
+  s += `<g stroke="#2a2130" stroke-width="4" stroke-linecap="round" pointer-events="none">`;
+  for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+    const x=P+c*CS, y=P+r*CS;
+    if(c+1<N && hasWall(m,r,c,r,c+1)) s += `<line x1="${x+CS}" y1="${y}" x2="${x+CS}" y2="${y+CS}"/>`;
+    if(r+1<N && hasWall(m,r,c,r+1,c)) s += `<line x1="${x}" y1="${y+CS}" x2="${x+CS}" y2="${y+CS}"/>`;
+  }
+  s += `</g><rect x="${P}" y="${P}" width="${N*CS}" height="${N*CS}" fill="none" stroke="#2a2130" stroke-width="4" rx="4" pointer-events="none"/>`;
+
+  if(m.windows && m.windows.size > 0){
+    s += `<g pointer-events="none">`;
+    for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+      const x=P+c*CS, y=P+r*CS;
+      if(isWindow(m,r,c,r,c+1)){
+        s+=`<rect x="${x+CS-5}" y="${y+CS*0.15}" width="10" height="${CS*0.7}" fill="#a3d1f0" stroke="#fff" stroke-width="2" rx="2" />`;
+        s+=`<text x="${x+CS}" y="${y+CS/2}" font-size="9" fill="#000" font-weight="bold" text-anchor="middle" transform="rotate(-90, ${x+CS}, ${y+CS/2})" dominant-baseline="central">Finestra</text>`;
+      }
+      if(c===0 && isWindow(m,r,c,r,c-1)){
+        s+=`<rect x="${x-5}" y="${y+CS*0.15}" width="10" height="${CS*0.7}" fill="#a3d1f0" stroke="#fff" stroke-width="2" rx="2" />`;
+        s+=`<text x="${x}" y="${y+CS/2}" font-size="9" fill="#000" font-weight="bold" text-anchor="middle" transform="rotate(-90, ${x}, ${y+CS/2})" dominant-baseline="central">Finestra</text>`;
+      }
+      if(isWindow(m,r,c,r+1,c)){
+        s+=`<rect x="${x+CS*0.15}" y="${y+CS-5}" width="${CS*0.7}" height="10" fill="#a3d1f0" stroke="#fff" stroke-width="2" rx="2" />`;
+        s+=`<text x="${x+CS/2}" y="${y+CS}" font-size="9" fill="#000" font-weight="bold" text-anchor="middle" dominant-baseline="central">Finestra</text>`;
+      }
+      if(r===0 && isWindow(m,r,c,r-1,c)){
+        s+=`<rect x="${x+CS*0.15}" y="${y-5}" width="${CS*0.7}" height="10" fill="#a3d1f0" stroke="#fff" stroke-width="2" rx="2" />`;
+        s+=`<text x="${x+CS/2}" y="${y}" font-size="9" fill="#000" font-weight="bold" text-anchor="middle" dominant-baseline="central">Finestra</text>`;
+      }
+    }
+    s += `</g>`;
+  }
+  if(m.doors && m.doors.size > 0){
+    s += `<g pointer-events="none">`;
+    for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+      const x=P+c*CS, y=P+r*CS;
+      if(isDoor(m,r,c,r,c+1)){
+        s+=`<rect x="${x+CS-5}" y="${y+CS*0.15}" width="10" height="${CS*0.7}" fill="#d97706" stroke="#fff" stroke-width="2" rx="2" />`;
+        s+=`<text x="${x+CS}" y="${y+CS/2}" font-size="9" fill="#000" font-weight="bold" text-anchor="middle" transform="rotate(-90, ${x+CS}, ${y+CS/2})" dominant-baseline="central">Porta</text>`;
+      }
+      if(c===0 && isDoor(m,r,c,r,c-1)){
+        s+=`<rect x="${x-5}" y="${y+CS*0.15}" width="10" height="${CS*0.7}" fill="#d97706" stroke="#fff" stroke-width="2" rx="2" />`;
+        s+=`<text x="${x}" y="${y+CS/2}" font-size="9" fill="#000" font-weight="bold" text-anchor="middle" transform="rotate(-90, ${x}, ${y+CS/2})" dominant-baseline="central">Porta</text>`;
+      }
+      if(isDoor(m,r,c,r+1,c)){
+        s+=`<rect x="${x+CS*0.15}" y="${y+CS-5}" width="${CS*0.7}" height="10" fill="#d97706" stroke="#fff" stroke-width="2" rx="2" />`;
+        s+=`<text x="${x+CS/2}" y="${y+CS}" font-size="9" fill="#000" font-weight="bold" text-anchor="middle" dominant-baseline="central">Porta</text>`;
+      }
+      if(r===0 && isDoor(m,r,c,r-1,c)){
+        s+=`<rect x="${x+CS*0.15}" y="${y-5}" width="${CS*0.7}" height="10" fill="#d97706" stroke="#fff" stroke-width="2" rx="2" />`;
+        s+=`<text x="${x+CS/2}" y="${y}" font-size="9" fill="#000" font-weight="bold" text-anchor="middle" dominant-baseline="central">Porta</text>`;
+      }
+    }
+    s += `</g>`;
+  }
+
+  for(let i=0;i<N;i++){
+    s += `<text x="${P/2}" y="${P+i*CS+CS/2+4}" font-family="var(--mono)" font-size="12" fill="var(--text-faint)" text-anchor="middle">${i+1}</text>`;
+    s += `<text x="${P+i*CS+CS/2}" y="${P/2+4}" font-family="var(--mono)" font-size="12" fill="var(--text-faint)" text-anchor="middle">${i+1}</text>`;
+  }
+
+  svg.innerHTML = s;
+}
+
+/* =====================================================================
+   INPUT: click singolo=appunto, doppio click/tap=piazzamento
+   ===================================================================== */
+function svgPointFromEvent(e){
+  const svg = $("#board");
+  const pt = svg.createSVGPoint();
+  pt.x = e.clientX; pt.y = e.clientY;
+  return pt.matrixTransform(svg.getScreenCTM().inverse());
+}
+function cellFromEvent(e){
+  const m = playerState.map;
+  const P = playerState.padding, CS = playerState.cellSize;
+  const p = svgPointFromEvent(e);
+  const c = Math.floor((p.x - P) / CS);
+  const r = Math.floor((p.y - P) / CS);
+  if(r<0||r>=m.size||c<0||c>=m.size) return null;
+  return {r,c};
+}
+
+function handleSingleClick(e){
+  const m = playerState.map; if(!m) return;
+  const cell = cellFromEvent(e); if(!cell) return;
+  const {r,c} = cell;
+  const k = r+"_"+c;
+  if(playerState.placed[k]) return;
+  if(!isOccupiable(m,r,c)) return;
+  if(!playerState.activeChar) return;
+
+  if(playerState.activeChar.id === "_blocker"){
+    playerState.placed[k] = playerState.activeChar;
+    updatePalette(); updateOverlay(); renderClues();
+  } else {
+    if(!playerState.notes[k]) playerState.notes[k] = [];
+    const idx = playerState.notes[k].findIndex(ch => ch.id === playerState.activeChar.id);
+    if(idx !== -1) playerState.notes[k].splice(idx,1);
+    else if(playerState.notes[k].length < 4) playerState.notes[k].push(playerState.activeChar);
+    updateOverlay();
+  }
+}
+function handleDoubleClick(e){
+  const m = playerState.map; if(!m) return;
+  const cell = cellFromEvent(e); if(!cell) return;
+  const {r,c} = cell;
+  const k = r+"_"+c;
+  if(playerState.placed[k]) return;
+  if(!isOccupiable(m,r,c)) return;
+  if(!playerState.activeChar) return;
+
+  playerState.placed[k] = playerState.activeChar;
+  for(const key in playerState.notes){
+    playerState.notes[key] = playerState.notes[key].filter(ch => ch.id !== playerState.activeChar.id);
+  }
+  if(playerState.activeChar.id !== "_blocker") playerState.activeChar = null;
+  updatePalette(); updateOverlay(); renderClues();
+}
+
+$("#clickLayer").addEventListener("click", handleSingleClick);
+$("#clickLayer").addEventListener("dblclick", handleDoubleClick);
+
+let lastTouchTime = 0;
+$("#clickLayer").addEventListener("touchend", e => {
+  if(e.changedTouches.length !== 1) return;
+  e.preventDefault();
+  const now = Date.now();
+  const t = e.changedTouches[0];
+  const fake = {clientX:t.clientX, clientY:t.clientY};
+  if(now - lastTouchTime < 300){
+    lastTouchTime = 0;
+    handleDoubleClick(fake);
+  } else {
+    lastTouchTime = now;
+    handleSingleClick(fake);
+  }
+});
+
+/* =====================================================================
+   OVERLAY: personaggi piazzati, appunti, croci riga/colonna
+   ===================================================================== */
+function updateOverlay(){
+  const ov = $("#boardOverlay");
+  ov.innerHTML = "";
+  const m = playerState.map; if(!m) return;
+  const N = m.size, P = playerState.padding, CS = playerState.cellSize;
+  const W = P + N*CS + 8, H = P + N*CS + 8;
+  ov.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  ov.setAttribute("width", W); ov.setAttribute("height", H);
+
+  const markedR = new Set(), markedC = new Set();
+  for(const k in playerState.placed){
+    if(playerState.placed[k].id === "_blocker") continue;
+    const [rs,cs] = k.split("_"); markedR.add(+rs); markedC.add(+cs);
+  }
+  for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+    const cell = cellAt(m,r,c);
+    if((markedR.has(r)||markedC.has(c)) && !playerState.placed[r+"_"+c] && (cell.walkable || cell.object)){
+      const x=P+c*CS, y=P+r*CS;
+      const p = document.createElementNS("http://www.w3.org/2000/svg","path");
+      p.setAttribute("d", `M ${x} ${y} L ${x+CS} ${y+CS} M ${x+CS} ${y} L ${x} ${y+CS}`);
+      p.setAttribute("stroke","rgba(228,72,61,0.5)");
+      p.setAttribute("stroke-width", CS*0.08);
+      ov.appendChild(p);
+    }
+  }
+
+  for(const k in playerState.placed){
+    const [rs,cs] = k.split("_"); const r=+rs, c=+cs;
+    const char = playerState.placed[k];
+    const x=P+c*CS, y=P+r*CS;
+    const g = document.createElementNS("http://www.w3.org/2000/svg","g");
+    g.style.pointerEvents = "auto"; g.style.cursor = "pointer";
+    const handler = (e) => {
+      e.stopPropagation(); e.preventDefault();
+      delete playerState.placed[k];
+      updatePalette(); updateOverlay(); renderClues();
+    };
+    g.addEventListener("click", handler);
+    g.addEventListener("touchend", handler);
+    if(char.id === "_blocker"){
+      g.innerHTML = `<path d="M ${x} ${y} L ${x+CS} ${y+CS} M ${x+CS} ${y} L ${x} ${y+CS}" stroke="rgba(228,72,61,0.5)" stroke-width="${CS*0.08}" />`;
+    } else {
+      const cx=x+CS/2, cy=y+CS/2, rc=CS*0.4;
+      const strokeCol = char.kind==="victim" ? "var(--evidence)" : "var(--violet-bright)";
+      const strokeDash = char.kind==="victim" ? `stroke-dasharray="4"` : "";
+      g.innerHTML = `<circle cx="${cx}" cy="${cy}" r="${rc}" fill="var(--desk)" stroke="${strokeCol}" stroke-width="2" ${strokeDash} />
+        <text x="${cx}" y="${cy}" font-family="var(--serif)" font-weight="bold" font-size="${CS*0.5}" fill="${strokeCol}" dominant-baseline="central" text-anchor="middle">${char.initial}</text>`;
+    }
+    ov.appendChild(g);
+  }
+
+  for(const k in playerState.notes){
+    if(playerState.placed[k]) continue;
+    const arr = playerState.notes[k];
+    if(!arr || !arr.length) continue;
+    const [rs,cs] = k.split("_"); const r=+rs, c=+cs;
+    const x=P+c*CS, y=P+r*CS;
+    const noteSize = CS*0.28, margin = 2;
+    const positions = [
+      {top:margin,left:margin}, {top:margin,left:CS-noteSize-margin},
+      {top:CS-noteSize-margin,left:CS-noteSize-margin}, {top:CS-noteSize-margin,left:margin}
+    ];
+    arr.forEach((char, idx) => {
+      if(idx > 3) return;
+      const pos = positions[idx];
+      const cx = x+pos.left+noteSize/2, cy = y+pos.top+noteSize/2, rc = noteSize/2;
+      const strokeCol = char.kind==="victim" ? "var(--evidence)" : "var(--violet-bright)";
+      const g = document.createElementNS("http://www.w3.org/2000/svg","g");
+      g.style.pointerEvents="auto"; g.style.cursor="pointer"; g.style.opacity="0.65"; g.style.filter="grayscale(40%)";
+      g.innerHTML = `<circle cx="${cx}" cy="${cy}" r="${rc}" fill="var(--desk)" stroke="${strokeCol}" stroke-width="1.5" />
+        <text x="${cx}" y="${cy}" font-family="var(--serif)" font-weight="bold" font-size="${noteSize*0.65}" fill="${strokeCol}" dominant-baseline="central" text-anchor="middle">${char.initial}</text>`;
+      const handler = (e) => {
+        e.stopPropagation(); e.preventDefault();
+        playerState.notes[k] = playerState.notes[k].filter(ch => ch.id !== char.id);
+        updateOverlay();
+      };
+      g.addEventListener("click", handler);
+      g.addEventListener("touchend", handler);
+      ov.appendChild(g);
+    });
+  }
+
+  checkWinCondition();
+}
+
+function checkWinCondition(){
+  const resultDiv = $("#result");
+  if(!resultDiv) return;
+  if(!playerState.entities || playerState.entities.length === 0){ resultDiv.style.display="none"; return; }
+
+  let placedCount = 0, correctCount = 0;
+  for(const k in playerState.placed){
+    const char = playerState.placed[k];
+    if(char.id === "_blocker") continue;
+    placedCount++;
+    const [r,c] = k.split("_").map(Number);
+    const orig = playerState.entities.find(e => e.id === char.id);
+    if(orig && orig.row === r && orig.col === c) correctCount++;
+  }
+  if(placedCount < playerState.entities.length){
+    resultDiv.style.display = "none";
+  } else {
+    resultDiv.style.display = "block";
+    if(correctCount === playerState.entities.length){
+      resultDiv.innerHTML = "BRAVO! HAI TROVATO L'ASSASSINO";
+      resultDiv.style.background = "rgba(40,167,69,0.15)";
+      resultDiv.style.color = "#28a745";
+      resultDiv.style.border = "1px solid #28a745";
+    } else {
+      resultDiv.innerHTML = "NON HAI TROVATO L'ASSASSINO";
+      resultDiv.style.background = "rgba(228,72,61,0.15)";
+      resultDiv.style.color = "var(--evidence)";
+      resultDiv.style.border = "1px solid var(--evidence)";
+    }
+  }
+}
+
+/* =====================================================================
+   LEGENDA OGGETTI
+   ===================================================================== */
+function renderLegend(){
+  const leg = $("#legend");
+  const m = playerState.map;
+  leg.innerHTML = "<h3>Oggetti in scena</h3>";
+  const used = [...new Set(m.cells.filter(c=>c.object).map(c=>c.object))];
+  if(used.length === 0){ leg.innerHTML += "<p>Nessun oggetto in scena.</p>"; return; }
+  const grid = document.createElement("div");
+  grid.className = "legend-grid";
+  let s = "";
+  for(const k of used.sort()){
+    const walk = objWalkable(k);
+    s += `<div style="display:flex; align-items:center; gap:8px;">
+      <svg width="26" height="26" viewBox="0 0 26 26" style="background:#f5f3ee; border-radius:5px; border:1px solid #ccc; flex-shrink:0;">${objectMarkup(k, 13, 13, 22)}</svg>
+      <span><b>${escapeHtml(objLabel(k))}</b> <small>(${walk ? "calpestabile" : "ostacolo"})</small></span>
+    </div>`;
+  }
+  grid.innerHTML = s;
+  leg.appendChild(grid);
+}
+
+/* =====================================================================
+   INDIZI
+   ===================================================================== */
+window.selectPlayerChar = function(id){
+  if(!playerState.charsList) return;
+  const char = playerState.charsList.find(c => c.id === id);
+  if(!char) return;
+  let isPlaced = false;
+  for(const k in playerState.placed) if(playerState.placed[k].id === char.id) isPlaced = true;
+  if(isPlaced) return;
+  playerState.activeChar = (playerState.activeChar && playerState.activeChar.id === char.id) ? null : char;
+  updatePalette();
+};
+
+function renderClues(){
+  const box = $("#clues");
+  const clues = playerState.clues;
+  if(!clues || clues.length === 0){ box.innerHTML = "<div class='empty-state'>Nessun indizio disponibile.</div>"; return; }
+
+  const m = playerState.map;
+  const sus = m.entities.filter(e=>e.kind==="suspect").sort((a,b)=>a.initial.localeCompare(b.initial));
+  const bySubj = {}, globals = [];
+  for(const c of clues){
+    if(c.scope==="global" || !c.scope) globals.push(c);
+    else (bySubj[c.subjectId] = bySubj[c.subjectId] || []).push(c);
+  }
+  const placedIds = new Set(Object.values(playerState.placed).map(p => p.id));
+  const boxesHtml = [];
+
+  for(const s of sus){
+    const list = bySubj[s.id] || [];
+    if(!list.length) continue;
+    const traitsText = `(${s.gender==='M'?'Uomo':'Donna'}${s.hasHat?', con cappello':''}${s.hasGlasses?', con occhiali':''})`;
+    const av = charAvatarSVG(s);
+    const isPlaced = placedIds.has(s.id);
+    const opStyle = isPlaced ? "opacity:0.4; filter:grayscale(80%);" : "opacity:1;";
+
+    let boxStr = `<div class="grp" style="${opStyle}">
+      <div class="gh" onclick="selectPlayerChar('${s.id}')">
+        <div class="avatar">${av}</div>
+        <div>
+          <div><span class="badge">${s.initial}</span><span class="name">${escapeHtml(s.name)}</span></div>
+          <div class="traits">${traitsText}</div>
+        </div>
+      </div>`;
+    let parts = list.map(c => {
+      let text = c.text.trim();
+      if(text.startsWith(s.name+" ")) text = text.substring(s.name.length+1).trim();
+      else if(text.startsWith(s.name)) text = text.substring(s.name.length).trim();
+      if(text.endsWith(".")) text = text.substring(0,text.length-1);
+      return text;
+    });
+    parts = parts.map((p, idx) => p.length ? (idx===0 ? p.charAt(0).toUpperCase()+p.slice(1) : p.charAt(0).toLowerCase()+p.slice(1)) : p);
+    const combinedText = parts.join(" e ") + ".";
+    boxStr += `<div class="txt">${escapeHtml(combinedText)}</div></div>`;
+    boxesHtml.push(boxStr);
+  }
+
+  if(globals.length){
+    let boxStr = `<div class="grp"><div class="gh"><span class="badge" style="background:#d8b25a; color:#000">★</span><span class="name">Vincoli globali</span></div>`;
+    for(const c of globals) boxStr += `<div class="txt">${escapeHtml(c.text)}</div>`;
+    boxStr += `</div>`;
+    boxesHtml.push(boxStr);
+  }
+
+  const columns = [];
+  for(let i=0;i<boxesHtml.length;i+=3) columns.push(boxesHtml.slice(i,i+3));
+  box.innerHTML = columns.map(col => `<div class="clue-col">${col.join("")}</div>`).join("");
+}
+
+/* =====================================================================
+   HOVER (evidenzia stanza / riga / colonna)
+   ===================================================================== */
+$("#clickLayer").addEventListener("mousemove", (evt) => {
+  const m = playerState.map; if(!m) return;
+  const P = playerState.padding, CS = playerState.cellSize, N = m.size;
+  const p = svgPointFromEvent(evt);
+  const c = Math.floor((p.x-P)/CS), r = Math.floor((p.y-P)/CS);
+  if(r<0||r>=N||c<0||c>=N){
+    if(playerState.hoverR !== -1){ playerState.hoverR=-1; playerState.hoverC=-1; updateHoverHighlight(); }
+    return;
+  }
+  if(r!==playerState.hoverR || c!==playerState.hoverC){
+    playerState.hoverR = r; playerState.hoverC = c; updateHoverHighlight();
+  }
+});
+$("#clickLayer").addEventListener("mouseleave", () => {
+  if(playerState.hoverR !== -1){ playerState.hoverR=-1; playerState.hoverC=-1; updateHoverHighlight(); }
+});
+
+function updateHoverHighlight(){
+  const overlay = $("#hoverOverlay");
+  const m = playerState.map;
+  const r = playerState.hoverR, c = playerState.hoverC;
+  if(!m || r<0 || c<0){ overlay.innerHTML=""; return; }
+  const N = m.size, CS = playerState.cellSize, P = playerState.padding;
+  const analysis = computeAreas(m);
+  const W = P+N*CS+8, H = P+N*CS+8;
+  overlay.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  overlay.setAttribute("width", W); overlay.setAttribute("height", H);
+
+  let s = "";
+  const hoveredArea = analysis.visualArea[r*N+c];
+  if(hoveredArea >= 0){
+    for(let ar=0; ar<N; ar++) for(let ac=0; ac<N; ac++){
+      if(analysis.visualArea[ar*N+ac] !== hoveredArea) continue;
+      const x=P+ac*CS, y=P+ar*CS;
+      if(ar===0 || analysis.visualArea[(ar-1)*N+ac]!==hoveredArea) s+=`<line x1="${x}" y1="${y}" x2="${x+CS}" y2="${y}" stroke="#2196F3" stroke-width="3.5"/>`;
+      if(ar===N-1 || analysis.visualArea[(ar+1)*N+ac]!==hoveredArea) s+=`<line x1="${x}" y1="${y+CS}" x2="${x+CS}" y2="${y+CS}" stroke="#2196F3" stroke-width="3.5"/>`;
+      if(ac===0 || analysis.visualArea[ar*N+(ac-1)]!==hoveredArea) s+=`<line x1="${x}" y1="${y}" x2="${x}" y2="${y+CS}" stroke="#2196F3" stroke-width="3.5"/>`;
+      if(ac===N-1 || analysis.visualArea[ar*N+(ac+1)]!==hoveredArea) s+=`<line x1="${x+CS}" y1="${y}" x2="${x+CS}" y2="${y+CS}" stroke="#2196F3" stroke-width="3.5"/>`;
+    }
+  }
+  for(let i=0;i<N;i++){
+    const cxR=P+i*CS, cyR=P+r*CS, isCenterR=(i===c);
+    s += `<rect x="${cxR}" y="${cyR}" width="${CS}" height="${CS}" fill="${isCenterR?'rgba(255,255,255,0.15)':'rgba(255,255,255,0.06)'}" stroke="#fff" stroke-width="${isCenterR?3:1}" />`;
+    if(i!==r){
+      const cxC=P+c*CS, cyC=P+i*CS;
+      s += `<rect x="${cxC}" y="${cyC}" width="${CS}" height="${CS}" fill="rgba(255,255,255,0.06)" stroke="#fff" stroke-width="1" />`;
+    }
+  }
+  overlay.innerHTML = s;
+}
+
+/* =====================================================================
+   AVVIO
+   ===================================================================== */
+window.addEventListener("DOMContentLoaded", async () => {
+  try{
+    await loadObjectManifest();
+  }catch(err){
+    toast("Catalogo oggetti non caricato: " + err.message, true);
+  }
+  probeObjectImages(); // non bloccante: usa segnaposto finché non risponde
+  openMapModal(true);
+});
+</script>
+</body>
+</html>
