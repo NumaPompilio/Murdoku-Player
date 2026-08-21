@@ -28,19 +28,6 @@
   a{color:var(--violet-bright)}
   button{font-family:inherit}
 
-  header{
-    display:flex; align-items:center; gap:14px; padding:12px 18px;
-    border-bottom:1px solid var(--line); background:linear-gradient(180deg,#241c31,#1c1626);
-    position:sticky; top:0; z-index:20; flex-wrap:wrap;
-  }
-  .brand{display:flex; align-items:baseline; gap:10px}
-  .brand .tab{
-    font-family:var(--serif); font-size:20px; letter-spacing:.5px; color:var(--paper);
-    background:var(--evidence); padding:4px 12px 5px; border-radius:3px 3px 0 0;
-    box-shadow:0 3px 0 #a5271f; transform:rotate(-1deg);
-  }
-  .brand h1{font-family:var(--serif); font-weight:600; font-size:17px; margin:0; letter-spacing:.3px}
-  .spacer{flex:1}
   .btn{
     background:var(--panel2); color:var(--text); border:1px solid var(--line2);
     padding:9px 13px; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600;
@@ -98,6 +85,7 @@
   .rules-link-row{text-align:right; margin-bottom:10px;}
   .rules-link-row a{font-size:13px; text-decoration:underline; cursor:pointer;}
   #clues{display:flex; gap:20px; align-items:start; flex-wrap:wrap;}
+  .change-map-row{text-align:center; margin-top:26px; padding-top:18px; border-top:1px solid var(--line);}
   .clue-col{display:flex; flex-direction:column; gap:16px; flex:1; min-width:230px; max-width:320px;}
   .grp{transition:all .3s ease; background:#fff; color:var(--ink); border:1px solid var(--line2); padding:14px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,.25);}
   .grp .gh{display:flex; align-items:center; gap:10px; cursor:pointer;}
@@ -120,7 +108,6 @@
   @keyframes spin{to{transform:rotate(360deg)}}
 
   @media (max-width: 1024px) {
-    header{padding:10px 12px;}
     #legend { display: none !important; }
     #player-view { padding: 10px; }
     .player-palette { flex-direction: row; width: 100%; justify-content: center; gap: 6px; padding: 8px; box-sizing: border-box; }
@@ -139,16 +126,6 @@
 </style>
 </head>
 <body>
-
-<header>
-  <div class="brand">
-    <span class="tab">MURDO<span style="color:#fff">KU</span></span>
-    <h1>Player</h1>
-  </div>
-  <div class="spacer"></div>
-  <button class="btn" id="btnChangeMap">🗺️ Cambia mappa</button>
-  <button class="btn ghost" id="btnRules">📖 Regole del gioco</button>
-</header>
 
 <main>
   <!-- ============ MODALE SELEZIONE / CARICAMENTO MAPPA ============ -->
@@ -227,6 +204,7 @@
         <div id="result"></div>
         <div class="rules-link-row"><a id="rulesLink2">Regole del gioco</a></div>
         <div id="clues"></div>
+        <div class="change-map-row"><button class="btn" id="btnChangeMap">🗺️ Cambia mappa</button></div>
       </div>
     </div>
     <div id="legend"></div>
@@ -673,7 +651,6 @@ $("#btnPasteClip").addEventListener("click", async () => {
   }
 });
 
-$("#btnRules").addEventListener("click", ()=> $("#rulesModal").classList.add("active"));
 $("#rulesLink2").addEventListener("click", (e)=>{ e.preventDefault(); $("#rulesModal").classList.add("active"); });
 $("#btnCloseRules").addEventListener("click", ()=> $("#rulesModal").classList.remove("active"));
 
@@ -1172,10 +1149,10 @@ function updateHoverHighlight(){
 window.addEventListener("DOMContentLoaded", async () => {
   try{
     await loadObjectManifest();
+    await probeObjectImages();
   }catch(err){
     toast("Catalogo oggetti non caricato: " + err.message, true);
   }
-  probeObjectImages(); // non bloccante: usa segnaposto finché non risponde
   openMapModal(true);
 });
 </script>
