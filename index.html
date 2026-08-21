@@ -853,7 +853,7 @@ function drawGrid(){
   for(const area of analysis.areas){
     if(area.cells.length < 2) continue;
     const anchor = areaLabelAnchor(area.cells, m);
-    const cx = P + (anchor.col+0.5)*CS, cy = P + (anchor.row+0.5)*CS;
+    const cx = P + ((anchor.colMin+anchor.colMax+1)/2)*CS, cy = P + (anchor.row+0.5)*CS;
     const nm = (m.areaNames && m.areaNames[area.id]) || ("Area "+(+area.id+1));
     const maxWidth = (anchor.colMax-anchor.colMin+1)*CS - 8;
     const naturalWidth = nm.length*15*0.62 + (nm.length-1)*1.5;
