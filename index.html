@@ -317,15 +317,37 @@ function computeAreas(m){
    maggiore. Così l'etichetta finisce sempre nella parte più larga della
    stanza, indipendentemente dalla sua forma (L, a corridoio, ecc.), a
    differenza del semplice centroide che può cadere fuori dall'area o in un
-   punto di passaggio stretto. */
-function areaLabelAnchor(cells){
+   punto di passaggio stretto.
+
+   Tra le celle candidate si preferiscono quelle libere da oggetti — e senza
+   oggetti nelle celle vicine, dato che gli oggetti sconfinano del 30% oltre
+   la propria cella e potrebbero comunque coprire l'etichetta — così il nome
+   della stanza cade in una zona sgombra quando possibile, con un
+   ripiegamento progressivo se la stanza è completamente piena di arredi. */
+function areaLabelAnchor(cells, m){
   const set = new Set(cells.map(c => c.row+","+c.col));
-  let best = cells[0], bestR = -1;
+  const hasObj = (r,c) => {
+    if(!inBounds(m,r,c)) return false;
+    return !!cellAt(m,r,c).object;
+  };
+  const clearance = (r,c) => {
+    if(hasObj(r,c)) return 0;
+    let clear8 = true;
+    for(let dr=-1; dr<=1; dr++) for(let dc=-1; dc<=1; dc++){
+      if(dr===0 && dc===0) continue;
+      if(hasObj(r+dr, c+dc)) clear8 = false;
+    }
+    if(clear8) return 2;
+    let clear4 = true;
+    for(const [dr,dc] of DIRS) if(hasObj(r+dr, c+dc)) clear4 = false;
+    return clear4 ? 1 : 0;
+  };
+
   let sumR = 0, sumC = 0;
   for(const c of cells){ sumR += c.row; sumC += c.col; }
   const cRow = sumR/cells.length, cCol = sumC/cells.length;
-  let bestDistToCentroid = Infinity;
-  for(const cell of cells){
+
+  const radiusOf = (cell) => {
     let r = 0;
     while(true){
       let ok = true;
@@ -335,13 +357,22 @@ function areaLabelAnchor(cells){
       if(!ok) break;
       r++;
     }
-    const radius = r - 1;
-    const distToCentroid = Math.hypot(cell.row-cRow, cell.col-cCol);
-    if(radius > bestR || (radius === bestR && distToCentroid < bestDistToCentroid)){
-      best = cell; bestR = radius; bestDistToCentroid = distToCentroid;
+    return r - 1;
+  };
+
+  for(let tier=2; tier>=0; tier--){
+    let best = null, bestR = -1, bestDist = Infinity;
+    for(const cell of cells){
+      if(clearance(cell.row, cell.col) < tier) continue;
+      const radius = radiusOf(cell);
+      const dist = Math.hypot(cell.row-cRow, cell.col-cCol);
+      if(radius > bestR || (radius === bestR && dist < bestDist)){
+        best = cell; bestR = radius; bestDist = dist;
+      }
     }
+    if(best) return best;
   }
-  return best;
+  return cells[0];
 }
 
 function deserializeMap(data){
@@ -768,7 +799,7 @@ function drawGrid(){
   // parte più larga dell'area anche se la sua forma è irregolare
   for(const area of analysis.areas){
     if(area.cells.length < 2) continue;
-    const anchor = areaLabelAnchor(area.cells);
+    const anchor = areaLabelAnchor(area.cells, m);
     const cx = P + (anchor.col+0.5)*CS, cy = P + (anchor.row+0.5)*CS;
     const nm = (m.areaNames && m.areaNames[area.id]) || ("Area "+(+area.id+1));
     s += `<text x="${cx}" y="${cy}" font-size="15" fill="#000" text-anchor="middle" opacity="0.16" pointer-events="none" font-family="var(--mono)" style="text-transform:uppercase; letter-spacing:1.5px; font-weight:800">${escapeXml(nm)}</text>`;
