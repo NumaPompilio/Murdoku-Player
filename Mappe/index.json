@@ -1,3 +1,11 @@
 [
-  { "file": "Masseria_Hard.md", "title": "Masseria 9×9 (Difficile)" }
+  { "file": "CasaDellaNonna_Hard.md", "title": "Casa della Nonna (Difficile)" },
+  { "file": "Chiesa_Easy.md", "title": "Chiesa (Facile)" },
+  { "file": "Hotel_Piano_3_Easy.md", "title": "Hotel - Piano 3 (Facile)" },
+  { "file": "Keplero_Hard.md", "title": "Keplero (Difficile)" },
+  { "file": "Masseria_Hard.md", "title": "Masseria 9×9 (Difficile)" },
+  { "file": "Molo_Easy.md", "title": "Molo (Facile)" },
+  { "file": "Piazza_di_Paese_Medium.md", "title": "Piazza di Paese (Medio)" },
+  { "file": "Spiaggia_Easy.md", "title": "Spiaggia (Facile)" },
+  { "file": "Suite_Easy.md", "title": "Suite (Facile)" }
 ]

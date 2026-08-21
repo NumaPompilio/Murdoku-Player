@@ -335,6 +335,11 @@
     "walkable": true
   },
   {
+    "id": "passerella",
+    "label": "Passerella",
+    "walkable": true
+  },
+  {
     "id": "pasticciotto",
     "label": "Pasticciotto",
     "walkable": false
