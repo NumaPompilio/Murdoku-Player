@@ -311,68 +311,64 @@ function computeAreas(m){
   return { areaOf, visualArea, areas, count:id, region };
 }
 
-/* Trova la cella "più interna" di un'area (un pole of inaccessibility discreto):
-   per ogni cella dell'area calcola il raggio massimo del quadrato centrato su
-   di essa interamente contenuto nell'area, e sceglie la cella col raggio
-   maggiore. Così l'etichetta finisce sempre nella parte più larga della
-   stanza, indipendentemente dalla sua forma (L, a corridoio, ecc.), a
-   differenza del semplice centroide che può cadere fuori dall'area o in un
-   punto di passaggio stretto.
-
-   Tra le celle candidate si preferiscono quelle libere da oggetti — e senza
-   oggetti nelle celle vicine, dato che gli oggetti sconfinano del 30% oltre
-   la propria cella e potrebbero comunque coprire l'etichetta — così il nome
-   della stanza cade in una zona sgombra quando possibile, con un
-   ripiegamento progressivo se la stanza è completamente piena di arredi. */
+/* Trova dove ancorare il nome di una stanza: cerca, riga per riga, la fila
+   più lunga di celle libere da oggetti e non separate da un muro (fino a un
+   massimo di 3 celle, oltre le quali il testo ci sta comunque); se non c'è
+   una fila di 3, prova con 2, poi con 1. Tra le file della lunghezza
+   trovata si sceglie quella più vicina al centro verticale della stanza.
+   Se non esiste nemmeno una singola cella libera (stanza completamente
+   piena di arredi), si ripiega sulla cella più vicina al centroide
+   dell'area, accettando che l'etichetta resti coperta da un oggetto. */
 function areaLabelAnchor(cells, m){
-  const set = new Set(cells.map(c => c.row+","+c.col));
-  const hasObj = (r,c) => {
-    if(!inBounds(m,r,c)) return false;
-    return !!cellAt(m,r,c).object;
-  };
-  const clearance = (r,c) => {
-    if(hasObj(r,c)) return 0;
-    let clear8 = true;
-    for(let dr=-1; dr<=1; dr++) for(let dc=-1; dc<=1; dc++){
-      if(dr===0 && dc===0) continue;
-      if(hasObj(r+dr, c+dc)) clear8 = false;
-    }
-    if(clear8) return 2;
-    let clear4 = true;
-    for(const [dr,dc] of DIRS) if(hasObj(r+dr, c+dc)) clear4 = false;
-    return clear4 ? 1 : 0;
-  };
-
-  let sumR = 0, sumC = 0;
-  for(const c of cells){ sumR += c.row; sumC += c.col; }
-  const cRow = sumR/cells.length, cCol = sumC/cells.length;
-
-  const radiusOf = (cell) => {
-    let r = 0;
-    while(true){
-      let ok = true;
-      for(let dr=-r; dr<=r && ok; dr++) for(let dc=-r; dc<=r && ok; dc++){
-        if(!set.has((cell.row+dr)+","+(cell.col+dc))) ok = false;
-      }
-      if(!ok) break;
-      r++;
-    }
-    return r - 1;
-  };
-
-  for(let tier=2; tier>=0; tier--){
-    let best = null, bestR = -1, bestDist = Infinity;
-    for(const cell of cells){
-      if(clearance(cell.row, cell.col) < tier) continue;
-      const radius = radiusOf(cell);
-      const dist = Math.hypot(cell.row-cRow, cell.col-cCol);
-      if(radius > bestR || (radius === bestR && dist < bestDist)){
-        best = cell; bestR = radius; bestDist = dist;
-      }
-    }
-    if(best) return best;
+  const byRow = new Map();
+  for(const c of cells){
+    if(!byRow.has(c.row)) byRow.set(c.row, []);
+    byRow.get(c.row).push(c);
   }
-  return cells[0];
+  for(const arr of byRow.values()) arr.sort((a,b) => a.col-b.col);
+
+  const sumRow = cells.reduce((a,c) => a+c.row, 0);
+  const centerRow = sumRow/cells.length;
+
+  for(let want=3; want>=1; want--){
+    let best = null, bestDist = Infinity, bestRun = null;
+    for(const [row, rowCells] of byRow){
+      let i = 0;
+      while(i < rowCells.length){
+        if(cellAt(m, row, rowCells[i].col).object){ i++; continue; }
+        let j = i;
+        while(j+1 < rowCells.length &&
+              rowCells[j+1].col === rowCells[j].col+1 &&
+              !hasWall(m, row, rowCells[j].col, row, rowCells[j+1].col) &&
+              !cellAt(m, row, rowCells[j+1].col).object){
+          j++;
+        }
+        const runLen = j-i+1;
+        if(runLen >= want){
+          const winStart = i + Math.floor((runLen-want)/2);
+          const winEnd = winStart + want - 1;
+          const mid = winStart + Math.floor((want-1)/2);
+          const dist = Math.abs(row-centerRow);
+          if(dist < bestDist){
+            bestDist = dist; best = rowCells[mid];
+            bestRun = {row, colMin: rowCells[winStart].col, colMax: rowCells[winEnd].col};
+          }
+        }
+        i = j+1;
+      }
+    }
+    if(best) return {row: best.row, col: best.col, colMin: bestRun.colMin, colMax: bestRun.colMax};
+  }
+
+  let sumC = 0;
+  for(const c of cells) sumC += c.col;
+  const centerCol = sumC/cells.length;
+  let best = cells[0], bestDist = Infinity;
+  for(const c of cells){
+    const dist = Math.hypot(c.row-centerRow, c.col-centerCol);
+    if(dist < bestDist){ bestDist = dist; best = c; }
+  }
+  return {row: best.row, col: best.col, colMin: best.col, colMax: best.col};
 }
 
 function deserializeMap(data){
@@ -859,10 +855,7 @@ function drawGrid(){
     const anchor = areaLabelAnchor(area.cells, m);
     const cx = P + (anchor.col+0.5)*CS, cy = P + (anchor.row+0.5)*CS;
     const nm = (m.areaNames && m.areaNames[area.id]) || ("Area "+(+area.id+1));
-    let cMin = anchor.col, cMax = anchor.col;
-    while(cMin>0 && !hasWall(m, anchor.row, cMin-1, anchor.row, cMin)) cMin--;
-    while(cMax<N-1 && !hasWall(m, anchor.row, cMax, anchor.row, cMax+1)) cMax++;
-    const maxWidth = (cMax-cMin+1)*CS - 8;
+    const maxWidth = (anchor.colMax-anchor.colMin+1)*CS - 8;
     const naturalWidth = nm.length*15*0.62 + (nm.length-1)*1.5;
     const textLenAttr = naturalWidth > maxWidth ? ` textLength="${maxWidth.toFixed(1)}" lengthAdjust="spacingAndGlyphs"` : "";
     s += `<text x="${cx}" y="${cy}" font-size="15" fill="#000" text-anchor="middle" opacity="0.16" pointer-events="none" font-family="var(--mono)" style="text-transform:uppercase; letter-spacing:1.5px; font-weight:800"${textLenAttr}>${escapeXml(nm)}</text>`;
